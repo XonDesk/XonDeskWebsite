@@ -15,21 +15,38 @@ import Layout from '../layouts/Layout.astro';
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl w-full mb-12">
             {[
-                { name: 'MacContainers', desc: 'Secure macOS containers for development' },
-                { name: 'SunbreakRunning', desc: 'Modern running companion app' },
-                { name: 'Zettlecast', desc: 'Podcast management for Zettelkasten' }
+                { 
+                    name: 'MacContainers', 
+                    desc: 'Native macOS container runtime for running Linux containers using lightweight VMs.', 
+                    tech: ['Swift', 'macOS', 'Virtualization'] 
+                },
+                { 
+                    name: 'SunbreakRunning', 
+                    desc: 'Modern running companion app built with agentic workflows for performance analysis.', 
+                    tech: ['Astro', 'TypeScript', 'Tailwind'] 
+                },
+                { 
+                    name: 'Zettlecast', 
+                    desc: 'Digital Zettelkasten system using on-device AI models to create structured knowledge.', 
+                    tech: ['TypeScript', 'AI Models', 'Local-First'] 
+                }
             ].map(repo => (
                 <a 
                     href={`https://github.com/XonDesk/${repo.name}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    class="group p-6 rounded-2xl bg-slate-800/30 border border-slate-700/50 hover:bg-slate-800/60 hover:border-cyan-500/30 transition-all duration-300 backdrop-blur-sm flex flex-col items-start hover:-translate-y-1 hover:shadow-lg hover:shadow-cyan-500/10"
+                    class="group p-6 rounded-2xl bg-slate-800/30 border border-slate-700/50 hover:bg-slate-800/60 hover:border-cyan-500/30 transition-all duration-300 backdrop-blur-sm flex flex-col items-start hover:-translate-y-1 hover:shadow-lg hover:shadow-cyan-500/10 h-full"
                 >
                     <div class="flex items-center w-full mb-3">
-                        <svg viewBox="0 0 24 24" class="w-5 h-5 text-cyan-400 mr-2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
+                        <svg viewBox="0 0 24 24" class="w-5 h-5 text-cyan-400 mr-2 flex-shrink-0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path></svg>
                         <span class="font-semibold text-slate-100 group-hover:text-cyan-400 transition-colors">{repo.name}</span>
                     </div>
-                    <!-- <p class="text-sm text-slate-400 font-light leading-relaxed">{repo.desc}</p> -->
+                    <p class="text-sm text-slate-300 font-light leading-relaxed mb-4 flex-grow">{repo.desc}</p>
+                    <div class="flex flex-wrap gap-2 mt-auto">
+                        {repo.tech.map(t => (
+                            <span class="px-2 py-1 text-xs rounded-md bg-white/5 text-cyan-300 border border-white/10">{t}</span>
+                        ))}
+                    </div>
                 </a>
             ))}
         </div>
