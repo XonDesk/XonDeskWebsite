@@ -1,0 +1,75 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const lastUpdated = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+
+<Layout title="Privacy Policy - Poster Magic">
+	<main class="min-h-screen bg-slate-950 py-20 px-4 md:px-8">
+        <div class="max-w-3xl mx-auto">
+            <header class="mb-12 text-center">
+                <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-500 mb-4">
+                    Poster Magic Privacy Policy
+                </h1>
+                <p class="text-slate-400">Last updated: {lastUpdated}</p>
+            </header>
+
+            <article class="prose prose-invert prose-lg max-w-none space-y-8 text-slate-300">
+                <section>
+                    <h2 class="text-2xl font-semibold text-white mb-4">Introduction</h2>
+                    <p>
+                        Poster Magic ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how your personal information is collected, used, and disclosed by Poster Magic.
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-white mb-4">Information We Collect</h2>
+                    <p>
+                        We collect minimal information to provide and improve our service. This may include:
+                    </p>
+                    <ul class="list-disc pl-6 space-y-2">
+                        <li><strong>Usage Data:</strong> Information about how you access and use the app, such as device type, operating system, and crash logs.</li>
+                        <li><strong>User Content:</strong> Images or text you upload to generate posters are processed securely and are not stored permanently on our servers unless explicitly saved by you.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-white mb-4">How We Use Your Information</h2>
+                    <p>
+                        We use the information we collect to:
+                    </p>
+                    <ul class="list-disc pl-6 space-y-2">
+                        <li>Provide, maintain, and improve our services.</li>
+                        <li>Respond to your comments and questions.</li>
+                        <li>Generate posters as requested by you.</li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-white mb-4">Data Security</h2>
+                    <p>
+                        We implement appropriate technical and organizational measures to protect the security of your personal information. However, please be aware that no method of transmission over the Internet or method of electronic storage is 100% secure.
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-white mb-4">Third-Party Services</h2>
+                    <p>
+                        We may use third-party services (such as analytics providers or cloud processing) that may collect information used to identify you. Please refer to their privacy policies for more information.
+                    </p>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-white mb-4">Contact Us</h2>
+                    <p>
+                        If you have any questions about this Privacy Policy, please contact us at support@xondesk.com.
+                    </p>
+                </section>
+            </article>
+            
+            <div class="mt-16 pt-8 border-t border-slate-800 text-center">
+                <a href="/" class="text-cyan-400 hover:text-cyan-300 transition-colors">← Back to Home</a>
+            </div>
+        </div>
+	</main>
+</Layout>
