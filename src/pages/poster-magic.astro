@@ -1,75 +1,276 @@
 ---
-import Layout from '../layouts/Layout.astro';
+import Layout from "../layouts/Layout.astro";
 
-const lastUpdated = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+const lastUpdated = "January 27, 2026";
 ---
 
 <Layout title="Privacy Policy - Poster Magic">
-	<main class="min-h-screen bg-slate-950 py-20 px-4 md:px-8">
+    <main class="min-h-screen bg-slate-950 py-20 px-4 md:px-8">
         <div class="max-w-3xl mx-auto">
             <header class="mb-12 text-center">
-                <h1 class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-500 mb-4">
+                <h1
+                    class="text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 to-purple-500 mb-4"
+                >
                     Poster Magic Privacy Policy
                 </h1>
                 <p class="text-slate-400">Last updated: {lastUpdated}</p>
             </header>
 
-            <article class="prose prose-invert prose-lg max-w-none space-y-8 text-slate-300">
+            <article
+                class="prose prose-invert prose-lg max-w-none space-y-8 text-slate-300"
+            >
                 <section>
-                    <h2 class="text-2xl font-semibold text-white mb-4">Introduction</h2>
+                    <h2 class="text-2xl font-semibold text-white mb-4">
+                        1. Introduction
+                    </h2>
                     <p>
-                        Poster Magic ("we," "our," or "us") is committed to protecting your privacy. This Privacy Policy explains how your personal information is collected, used, and disclosed by Poster Magic.
+                        Sunbreak LLC ("we," "our," or "us") operates the Poster
+                        Magic mobile application. We respect your privacy and
+                        are committed to protecting the personal information you
+                        share with us.
+                    </p>
+                    <p>
+                        This Privacy Policy explains what information we
+                        collect, how we use it, and your rights regarding that
+                        data.
                     </p>
                 </section>
 
                 <section>
-                    <h2 class="text-2xl font-semibold text-white mb-4">Information We Collect</h2>
+                    <h2 class="text-2xl font-semibold text-white mb-4">
+                        2. Information We Collect
+                    </h2>
+
+                    <h3 class="text-xl font-semibold text-white mt-6 mb-2">
+                        A. Account Information
+                    </h3>
                     <p>
-                        We collect minimal information to provide and improve our service. This may include:
+                        When you create an account, we use Google Firebase
+                        Authentication to verify your identity. Depending on the
+                        method you choose (Sign in with Apple, Google, Email, or
+                        SMS), we may process:
                     </p>
                     <ul class="list-disc pl-6 space-y-2">
-                        <li><strong>Usage Data:</strong> Information about how you access and use the app, such as device type, operating system, and crash logs.</li>
-                        <li><strong>User Content:</strong> Images or text you upload to generate posters are processed securely and are not stored permanently on our servers unless explicitly saved by you.</li>
+                        <li>Email address</li>
+                        <li>Phone number</li>
+                        <li>User ID (assigned by Firebase)</li>
+                    </ul>
+                    <p
+                        class="mt-4 p-4 bg-slate-900 border-l-4 border-cyan-500 rounded-r text-slate-300 italic"
+                    >
+                        <strong>Note:</strong> We do not store your email or phone
+                        number in our own separate database; this information resides
+                        within the secure Firebase Authentication infrastructure.
+                    </p>
+
+                    <h3 class="text-xl font-semibold text-white mt-8 mb-2">
+                        B. User Content (Photos and Images)
+                    </h3>
+                    <p>
+                        To provide the core functionality of Poster Magic, you
+                        upload photos to our service.
+                    </p>
+                    <ul class="list-disc pl-6 space-y-2">
+                        <li>
+                            <strong>Transient Processing:</strong> Your photos are
+                            uploaded securely to our cloud servers solely for the
+                            purpose of processing them with our AI engine.
+                        </li>
+                        <li>
+                            <strong>No Permanent Storage:</strong> Once the AI analysis
+                            is complete and the response is returned to your device,
+                            the original photo is permanently deleted from our servers.
+                            We do not retain your photos.
+                        </li>
+                    </ul>
+
+                    <h3 class="text-xl font-semibold text-white mt-8 mb-2">
+                        C. Technical Data and Logs
+                    </h3>
+                    <p>
+                        We collect certain technical data to ensure the app is
+                        stable and to debug errors. This includes:
+                    </p>
+                    <ul class="list-disc pl-6 space-y-2">
+                        <li>
+                            <strong>Device Information:</strong> Device model, OS
+                            version, and unique device identifiers.
+                        </li>
+                        <li>
+                            <strong>Usage Logs:</strong> Anonymized logs of app crashes
+                            or errors.
+                        </li>
+                        <li>
+                            <strong>IP Address:</strong> Collected automatically by
+                            our infrastructure providers for security and fraud prevention.
+                        </li>
                     </ul>
                 </section>
 
                 <section>
-                    <h2 class="text-2xl font-semibold text-white mb-4">How We Use Your Information</h2>
-                    <p>
-                        We use the information we collect to:
-                    </p>
+                    <h2 class="text-2xl font-semibold text-white mb-4">
+                        3. How We Use Your Information
+                    </h2>
+                    <p>We use your data for the following specific purposes:</p>
                     <ul class="list-disc pl-6 space-y-2">
-                        <li>Provide, maintain, and improve our services.</li>
-                        <li>Respond to your comments and questions.</li>
-                        <li>Generate posters as requested by you.</li>
+                        <li>
+                            <strong>To Provide the Service:</strong> Authenticating
+                            your login and processing your photos to generate poster
+                            content.
+                        </li>
+                        <li>
+                            <strong>AI Processing:</strong> We use Google Cloud (Gemini)
+                            to analyze your photos. We have configured our systems
+                            to opt-out of data logging for model training. Your data
+                            is not used to train Google’s AI models.
+                        </li>
+                        <li>
+                            <strong>App Stability:</strong> We use Firebase Crashlytics
+                            and Firebase Analytics to identify crashes and improve
+                            app performance.
+                        </li>
                     </ul>
                 </section>
 
                 <section>
-                    <h2 class="text-2xl font-semibold text-white mb-4">Data Security</h2>
+                    <h2 class="text-2xl font-semibold text-white mb-4">
+                        4. Third-Party Service Providers
+                    </h2>
+                    <p class="mb-6">
+                        We do not sell your data. We share data only with the
+                        trusted third-party infrastructure providers necessary
+                        to run the app:
+                    </p>
+                    <div class="overflow-x-auto">
+                        <table
+                            class="w-full text-left border-collapse min-w-[600px]"
+                        >
+                            <thead>
+                                <tr class="border-b border-slate-700">
+                                    <th
+                                        class="py-3 px-4 font-semibold text-white"
+                                        >Provider</th
+                                    >
+                                    <th
+                                        class="py-3 px-4 font-semibold text-white"
+                                        >Purpose</th
+                                    >
+                                    <th
+                                        class="py-3 px-4 font-semibold text-white"
+                                        >Privacy Policy</th
+                                    >
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr class="border-b border-slate-800">
+                                    <td class="py-3 px-4">Google Firebase</td>
+                                    <td class="py-3 px-4"
+                                        >Authentication, Database, & Analytics</td
+                                    >
+                                    <td class="py-3 px-4"
+                                        ><a
+                                            href="https://policies.google.com/privacy"
+                                            class="text-cyan-400 hover:text-cyan-300 transition-colors"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            >Google Privacy Policy</a
+                                        ></td
+                                    >
+                                </tr>
+                                <tr class="border-b border-slate-800">
+                                    <td class="py-3 px-4"
+                                        >Google Cloud (Gemini)</td
+                                    >
+                                    <td class="py-3 px-4"
+                                        >AI Image Processing</td
+                                    >
+                                    <td class="py-3 px-4"
+                                        ><a
+                                            href="https://cloud.google.com/terms/cloud-privacy-notice"
+                                            class="text-cyan-400 hover:text-cyan-300 transition-colors"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            >Google Cloud Privacy</a
+                                        ></td
+                                    >
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-white mb-4">
+                        5. Data Retention and Deletion
+                    </h2>
+                    <ul class="list-disc pl-6 space-y-2">
+                        <li>
+                            <strong>Photos:</strong> Deleted immediately after processing.
+                        </li>
+                        <li>
+                            <strong>Generated Content:</strong> The .ics (calendar)
+                            files and poster images generated by the app are stored
+                            locally on your device. We do not store copies of these
+                            on our servers.
+                        </li>
+                        <li>
+                            <strong>Account Deletion:</strong> You have the right
+                            to delete your account at any time directly within the
+                            app settings. When you request deletion:
+                            <ul
+                                class="list-disc pl-6 mt-2 space-y-1 text-slate-400"
+                            >
+                                <li>
+                                    Your authentication credentials are removed
+                                    from Firebase.
+                                </li>
+                                <li>
+                                    Any associated user ID data is permanently
+                                    wiped.
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </section>
+
+                <section>
+                    <h2 class="text-2xl font-semibold text-white mb-4">
+                        6. Children’s Privacy
+                    </h2>
                     <p>
-                        We implement appropriate technical and organizational measures to protect the security of your personal information. However, please be aware that no method of transmission over the Internet or method of electronic storage is 100% secure.
+                        Poster Magic is intended for a general audience. We do
+                        not knowingly collect personal information from children
+                        under the age of 13. If we become aware that we have
+                        inadvertently collected data from a child under 13, we
+                        will take steps to delete it immediately.
                     </p>
                 </section>
 
                 <section>
-                    <h2 class="text-2xl font-semibold text-white mb-4">Third-Party Services</h2>
+                    <h2 class="text-2xl font-semibold text-white mb-4">
+                        7. Contact Us
+                    </h2>
                     <p>
-                        We may use third-party services (such as analytics providers or cloud processing) that may collect information used to identify you. Please refer to their privacy policies for more information.
+                        If you have any questions about this Privacy Policy or
+                        your data, please contact us at:
                     </p>
-                </section>
-
-                <section>
-                    <h2 class="text-2xl font-semibold text-white mb-4">Contact Us</h2>
-                    <p>
-                        If you have any questions about this Privacy Policy, please contact us at support@xondesk.com.
-                    </p>
+                    <div class="mt-4">
+                        <a
+                            href="mailto:xondeck@outlook.com"
+                            class="text-xl text-cyan-400 hover:text-cyan-300 transition-colors"
+                            >xondeck@outlook.com</a
+                        >
+                    </div>
                 </section>
             </article>
-            
+
             <div class="mt-16 pt-8 border-t border-slate-800 text-center">
-                <a href="/" class="text-cyan-400 hover:text-cyan-300 transition-colors">← Back to Home</a>
+                <a
+                    href="/"
+                    class="text-cyan-400 hover:text-cyan-300 transition-colors"
+                    >← Back to Home</a
+                >
             </div>
         </div>
-	</main>
+    </main>
 </Layout>
