@@ -99,15 +99,11 @@ export default function SlotTracker() {
                 return (
                   <div key={level} className="flex items-center gap-2">
                     <span className="text-xs w-4 text-right font-cinzel" style={{ color: 'var(--sp-plum)' }}>{level}</span>
-                    <button
-                      aria-label={used ? `Mark arcanum ${level} unused` : `Use arcanum ${level}`}
-                      aria-pressed={used === 1}
-                      className="w-6 h-6 rounded-full border-2 transition-colors focus:outline-none focus-visible:ring-2"
-                      style={{
-                        backgroundColor: used ? 'var(--sp-plum)' : 'transparent',
-                        borderColor: 'var(--sp-plum)',
-                      }}
-                      onClick={() => dispatch({ type: 'USE_SLOT', slotType: 'arcanum', level, used: used ? 0 : 1 })}
+                    <BubbleRow
+                      total={1}
+                      used={used}
+                      color="var(--sp-plum)"
+                      onSetUsed={(n) => dispatch({ type: 'USE_SLOT', slotType: 'arcanum', level, used: (n > 0 ? 1 : 0) as 0 | 1 })}
                     />
                   </div>
                 );
