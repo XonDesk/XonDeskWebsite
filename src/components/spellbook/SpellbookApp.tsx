@@ -5,6 +5,7 @@ import spellsData from '../../data/spells-5e2024.json';
 import type { AppState, Profile, Spellbook, Spell, ClassEntry } from '../../types/spellbook';
 import type { Action } from '../../hooks/useSpellbook';
 import type { SlotSummary } from '../../hooks/useSlots';
+import ProfileBar from './ProfileBar';
 
 const EMPTY_CLASS_ENTRIES: ClassEntry[] = [];
 
@@ -56,10 +57,7 @@ export default function SpellbookApp() {
   return (
     <AppContext.Provider value={contextValue}>
       <div className="flex flex-col min-h-screen font-lora" style={{ backgroundColor: 'var(--sp-pink-pale)' }}>
-        {/* ProfileBar placeholder */}
-        <header className="sticky top-0 z-10 p-4 border-b" style={{ backgroundColor: 'var(--sp-cream)', borderColor: 'var(--sp-pink-soft)' }}>
-          <div style={{ color: 'var(--sp-plum)' }} className="font-cinzel font-bold">🌙 Spellbook — ProfileBar</div>
-        </header>
+        <ProfileBar />
 
         {/* SlotTracker placeholder */}
         <section className="p-4 overflow-x-auto" style={{ backgroundColor: 'var(--sp-cream)' }}>
