@@ -27,7 +27,7 @@ export type SpellcastingClass =
 export interface SlotUsage {
   regular: Record<number, number>;  // spell level → used count
   pact: number;                      // used count
-  arcanum: Record<number, number>;  // spell level (6–9) → 0 or 1
+  arcanum: Record<number, 0 | 1>;   // spell level (6–9) → 0 or 1
 }
 
 export interface Spellbook {
