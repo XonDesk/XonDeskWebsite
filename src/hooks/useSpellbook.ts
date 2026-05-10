@@ -18,6 +18,8 @@ export type Action =
   | { type: 'UPDATE_SPELLBOOK'; spellbookId: string; updates: Partial<Omit<Spellbook, 'id'>> }
   | { type: 'DELETE_SPELLBOOK'; spellbookId: string };
 
+const STORAGE_KEY = 'spellbook-v1';
+
 const initialState: AppState = {
   profiles: [],
   activeProfileId: '',
@@ -38,8 +40,10 @@ function updateActiveProfile(state: AppState, updater: (p: Profile) => Profile):
 
 export function reducer(state: AppState, action: Action): AppState {
   switch (action.type) {
-    case 'SET_ACTIVE_PROFILE':
+    case 'SET_ACTIVE_PROFILE': {
+      if (!state.profiles.find(p => p.id === action.profileId)) return state;
       return { ...state, activeProfileId: action.profileId };
+    }
 
     case 'SET_ACTIVE_SPELLBOOK':
       return updateActiveProfile(state, (p) => ({
@@ -48,8 +52,6 @@ export function reducer(state: AppState, action: Action): AppState {
       }));
 
     case 'ADD_SPELL': {
-      const profile = getActiveProfile(state);
-      if (!profile) return state;
       return updateActiveProfile(state, (p) => ({
         ...p,
         spellbooks: p.spellbooks.map((sb) =>
@@ -180,7 +182,7 @@ export function reducer(state: AppState, action: Action): AppState {
 export function useSpellbook(): { state: AppState; dispatch: React.Dispatch<Action> } {
   const [state, dispatch] = useReducer(reducer, initialState, (init) => {
     try {
-      const saved = localStorage.getItem('spellbook-v1');
+      const saved = localStorage.getItem(STORAGE_KEY);
       return saved ? JSON.parse(saved) : init;
     } catch {
       return init;
@@ -188,7 +190,7 @@ export function useSpellbook(): { state: AppState; dispatch: React.Dispatch<Acti
   });
 
   useEffect(() => {
-    localStorage.setItem('spellbook-v1', JSON.stringify(state));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
   return { state, dispatch };

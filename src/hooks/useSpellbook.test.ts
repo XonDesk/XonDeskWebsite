@@ -17,9 +17,36 @@ function stateWithProfile(overrides?: Partial<Profile>): AppState {
 describe('reducer', () => {
   describe('SET_ACTIVE_PROFILE', () => {
     it('changes activeProfileId', () => {
-      const state = stateWithProfile();
+      const profile2: Profile = {
+        id: 'p2',
+        name: 'Second',
+        classEntries: [],
+        spellbooks: [],
+        activeSpellbookId: '',
+        slotUsage: { regular: {}, pact: 0, arcanum: {} },
+      };
+      const state: AppState = {
+        profiles: [
+          {
+            id: 'p1',
+            name: 'First',
+            classEntries: [],
+            spellbooks: [],
+            activeSpellbookId: '',
+            slotUsage: { regular: {}, pact: 0, arcanum: {} },
+          },
+          profile2,
+        ],
+        activeProfileId: 'p1',
+      };
       const next = reducer(state, { type: 'SET_ACTIVE_PROFILE', profileId: 'p2' });
       expect(next.activeProfileId).toBe('p2');
+    });
+
+    it('is a no-op when profileId does not exist', () => {
+      const state = stateWithProfile();
+      const next = reducer(state, { type: 'SET_ACTIVE_PROFILE', profileId: 'nonexistent' });
+      expect(next).toBe(state);
     });
   });
 
@@ -155,6 +182,74 @@ describe('reducer', () => {
       expect(usage.pact).toBe(0);
       expect(usage.regular[1]).toBe(2);
       expect(usage.arcanum[7]).toBe(1);
+    });
+  });
+
+  describe('SET_ACTIVE_SPELLBOOK', () => {
+    it('changes activeSpellbookId on active profile', () => {
+      const state = stateWithProfile({
+        spellbooks: [
+          { id: 'sb1', name: 'Combat', spellIds: [] },
+          { id: 'sb2', name: 'Utility', spellIds: [] },
+        ],
+        activeSpellbookId: 'sb1',
+      });
+      const next = reducer(state, { type: 'SET_ACTIVE_SPELLBOOK', spellbookId: 'sb2' });
+      expect(next.profiles[0].activeSpellbookId).toBe('sb2');
+    });
+  });
+
+  describe('CREATE_SPELLBOOK', () => {
+    it('adds a spellbook to active profile and sets activeSpellbookId to new id', () => {
+      const state = stateWithProfile();
+      const next = reducer(state, { type: 'CREATE_SPELLBOOK', name: 'Ritual' });
+      const profile = next.profiles[0];
+      expect(profile.spellbooks).toHaveLength(2);
+      const newSb = profile.spellbooks.find((sb) => sb.name === 'Ritual');
+      expect(newSb).toBeDefined();
+      expect(newSb!.spellIds).toEqual([]);
+      expect(profile.activeSpellbookId).toBe(newSb!.id);
+    });
+  });
+
+  describe('UPDATE_SPELLBOOK', () => {
+    it('renames a spellbook', () => {
+      const state = stateWithProfile();
+      const next = reducer(state, {
+        type: 'UPDATE_SPELLBOOK',
+        spellbookId: 'sb1',
+        updates: { name: 'Renamed' },
+      });
+      expect(next.profiles[0].spellbooks[0].name).toBe('Renamed');
+    });
+  });
+
+  describe('DELETE_SPELLBOOK', () => {
+    it('removes spellbook and falls back to first remaining id', () => {
+      const state = stateWithProfile({
+        spellbooks: [
+          { id: 'sb1', name: 'Combat', spellIds: [] },
+          { id: 'sb2', name: 'Utility', spellIds: [] },
+        ],
+        activeSpellbookId: 'sb1',
+      });
+      const next = reducer(state, { type: 'DELETE_SPELLBOOK', spellbookId: 'sb1' });
+      const profile = next.profiles[0];
+      expect(profile.spellbooks).toHaveLength(1);
+      expect(profile.spellbooks[0].id).toBe('sb2');
+      expect(profile.activeSpellbookId).toBe('sb2');
+    });
+  });
+
+  describe('UPDATE_PROFILE', () => {
+    it('updates profile name', () => {
+      const state = stateWithProfile();
+      const next = reducer(state, {
+        type: 'UPDATE_PROFILE',
+        profileId: 'p1',
+        updates: { name: 'Updated Name' },
+      });
+      expect(next.profiles[0].name).toBe('Updated Name');
     });
   });
 });
