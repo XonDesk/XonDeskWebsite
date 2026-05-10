@@ -8,6 +8,7 @@
  * Usage:
  *   node scripts/build-spells.js            # fetch, merge, write output file
  *   node scripts/build-spells.js --dry-run  # fetch, merge, print stats; do NOT write
+ *   node scripts/build-spells.js --verbose  # include per-spell warnings in addition to summary
  *
  * Sources:
  *   1. 5etools (structured metadata):
@@ -399,7 +400,11 @@ async function fetch5etoolsSpells() {
       continue;
     }
 
-    const school = SCHOOL_MAP[spell.school] ?? spell.school ?? 'unknown';
+    const school = SCHOOL_MAP[spell.school];
+    if (!school) {
+      process.stderr.write(`[WARN] Unknown school code "${spell.school}" on spell "${spell.name}"\n`);
+    }
+    const schoolName = school ?? spell.school ?? 'unknown';
     const durationArr = spell.duration ?? [];
     const ritualMeta = spell.meta ?? {};
 
@@ -407,7 +412,7 @@ async function fetch5etoolsSpells() {
       id: slugify(name),
       name,
       level: spell.level ?? 0,
-      school,
+      school: schoolName,
       castingTime: parseCastingTime(spell.time),
       range: parseRange(spell.range),
       components: parseComponents(spell.components),
@@ -531,7 +536,7 @@ function extractDearMercyProse(entry) {
  *   2. Dear-Mercy-only entries: include with fields mapped to schema; warn.
  *   3. 5etools-only entries: include as-is; warn.
  */
-function mergeSpells(fivetoolsMap, dearMercyEntries) {
+function mergeSpells(fivetoolsMap, dearMercyEntries, verbose = false) {
   const output = new Map(fivetoolsMap); // copy — keyed by normalizedName
   const dearMercyMatched = new Set();
 
@@ -548,17 +553,25 @@ function mergeSpells(fivetoolsMap, dearMercyEntries) {
     if (output.has(key)) {
       // Matched — overwrite prose fields only
       const existing = output.get(key);
-      output.set(key, {
+      const merged = {
         ...existing,
-        description: prose.description || existing.description,
-        higherLevel: prose.higherLevel !== undefined ? prose.higherLevel : existing.higherLevel,
-      });
+        description: prose.description !== undefined ? prose.description : existing.description,
+      };
+      // Only set higherLevel if either prose or existing has it defined
+      if (prose.higherLevel !== undefined) {
+        merged.higherLevel = prose.higherLevel;
+      } else if (existing.higherLevel !== undefined) {
+        merged.higherLevel = existing.higherLevel;
+      }
+      output.set(key, merged);
       dearMercyMatched.add(key);
     } else {
       // Dear-Mercy only — build a best-effort spell entry
-      process.stderr.write(
-        `[WARN] Dear-Mercy spell "${rawName}" not found in 5etools; including with partial data.\n`
-      );
+      if (verbose) {
+        process.stderr.write(
+          `[WARN] Dear-Mercy spell "${rawName}" not found in 5etools; including with partial data.\n`
+        );
+      }
 
       const dmOnlyEntry = {
         id: slugify(rawName),
@@ -572,7 +585,7 @@ function mergeSpells(fivetoolsMap, dearMercyEntries) {
         concentration: dmEntry.concentration ?? false,
         ritual: dmEntry.ritual ?? false,
         description: prose.description,
-        higherLevel: prose.higherLevel,
+        ...(prose.higherLevel !== undefined ? { higherLevel: prose.higherLevel } : {}),
         classes: dmEntry.classes ?? [],
       };
       output.set(key, dmOnlyEntry);
@@ -583,9 +596,9 @@ function mergeSpells(fivetoolsMap, dearMercyEntries) {
   let unmatched5etools = 0;
   for (const [key, spell] of fivetoolsMap) {
     if (!dearMercyMatched.has(key)) {
-      if (!spell.description) {
+      if (verbose) {
         process.stderr.write(
-          `[WARN] 5etools-only spell "${spell.name}" has no description from Dear-Mercy.\n`
+          `[WARN] 5etools-only spell "${spell.name}" has no matching Dear-Mercy entry.\n`
         );
       }
       unmatched5etools++;
@@ -611,6 +624,7 @@ function mergeSpells(fivetoolsMap, dearMercyEntries) {
 
 async function main() {
   const dryRun = process.argv.includes('--dry-run');
+  const verbose = process.argv.includes('--verbose');
 
   if (dryRun) {
     console.log('[DRY RUN] Will not write output file.');
@@ -624,7 +638,7 @@ async function main() {
 
   // 2. Merge
   console.log('\nMerging data sources...');
-  const spells = mergeSpells(fivetoolsMap, dearMercyEntries);
+  const spells = mergeSpells(fivetoolsMap, dearMercyEntries, verbose);
 
   // 3. Stats
   const byLevel = {};
