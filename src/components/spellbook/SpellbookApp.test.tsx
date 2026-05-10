@@ -20,5 +20,5 @@ it('renders without crashing', () => {
 
 it('opens settings when no profiles exist', () => {
   render(<SpellbookApp />);
-  expect(screen.getByText(/SettingsPanel/i)).toBeInTheDocument();
+  expect(screen.getByText('Settings')).toBeInTheDocument();
 });

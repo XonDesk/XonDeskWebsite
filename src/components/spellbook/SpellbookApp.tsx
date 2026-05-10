@@ -10,6 +10,7 @@ import SlotTracker from './SlotTracker';
 import BrowseToggle from './BrowseToggle';
 import SpellList from './SpellList';
 import SpellDetail from './SpellDetail';
+import SettingsPanel from './SettingsPanel';
 
 const EMPTY_CLASS_ENTRIES: ClassEntry[] = [];
 
@@ -73,15 +74,7 @@ export default function SpellbookApp() {
           <SpellList />
         </main>
 
-        {/* SettingsPanel placeholder (overlay) */}
-        {settingsOpen && (
-          <div className="fixed inset-0 z-50 flex justify-end" onClick={() => setSettingsOpen(false)}>
-            <div className="w-80 h-full p-4 shadow-lg" style={{ backgroundColor: 'var(--sp-cream)' }} onClick={e => e.stopPropagation()}>
-              <div style={{ color: 'var(--sp-plum)' }}>SettingsPanel placeholder</div>
-              <button onClick={() => setSettingsOpen(false)}>Close</button>
-            </div>
-          </div>
-        )}
+        {settingsOpen && <SettingsPanel />}
         <SpellDetail />
       </div>
     </AppContext.Provider>
