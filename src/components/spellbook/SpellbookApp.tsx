@@ -6,6 +6,7 @@ import type { AppState, Profile, Spellbook, Spell, ClassEntry } from '../../type
 import type { Action } from '../../hooks/useSpellbook';
 import type { SlotSummary } from '../../hooks/useSlots';
 import ProfileBar from './ProfileBar';
+import SlotTracker from './SlotTracker';
 
 const EMPTY_CLASS_ENTRIES: ClassEntry[] = [];
 
@@ -59,10 +60,7 @@ export default function SpellbookApp() {
       <div className="flex flex-col min-h-screen font-lora" style={{ backgroundColor: 'var(--sp-pink-pale)' }}>
         <ProfileBar />
 
-        {/* SlotTracker placeholder */}
-        <section className="p-4 overflow-x-auto" style={{ backgroundColor: 'var(--sp-cream)' }}>
-          <div style={{ color: 'var(--sp-plum)' }}>SlotTracker placeholder</div>
-        </section>
+        <SlotTracker />
 
         {/* Main content */}
         <main className="flex-1 flex flex-col overflow-hidden">
