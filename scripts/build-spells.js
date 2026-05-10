@@ -12,10 +12,10 @@
  *
  * Sources:
  *   1. 5etools (structured metadata):
- *      https://raw.githubusercontent.com/5etools-mirror-2/5etools-mirror-2/master/data/spells/spells-xphb.json
+ *      https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/main/data/spells/spells-xphb.json
  *
- *   2. Dear-Mercy/DnD-5e-2024-Spells (prose descriptions):
- *      https://raw.githubusercontent.com/Dear-Mercy/DnD-5e-2024-Spells/main/5e2024spells.json
+ *   2. Dear-Mercy/DnD-5e-2024-Spells (prose descriptions + class lists):
+ *      https://raw.githubusercontent.com/Dear-Mercy/DnD-5e-2024-Spells/main/Spells%20DnD%205e%202024%203-12-2025.csv
  *
  * Requirements: Node 18+ (uses built-in fetch). No extra npm packages needed.
  */
@@ -33,10 +33,10 @@ const ROOT = resolve(__dirname, '..');
 const OUTPUT_PATH = resolve(ROOT, 'src/data/spells-5e2024.json');
 
 const FIVETOOLS_URL =
-  'https://raw.githubusercontent.com/5etools-mirror-2/5etools-mirror-2/master/data/spells/spells-xphb.json';
+  'https://raw.githubusercontent.com/5etools-mirror-3/5etools-src/main/data/spells/spells-xphb.json';
 
 const DEAR_MERCY_URL =
-  'https://raw.githubusercontent.com/Dear-Mercy/DnD-5e-2024-Spells/main/5e2024spells.json';
+  'https://raw.githubusercontent.com/Dear-Mercy/DnD-5e-2024-Spells/main/Spells%20DnD%205e%202024%203-12-2025.csv';
 
 // Only include spells whose source matches one of these (2024 PHB in 5etools).
 const ALLOWED_SOURCES = new Set(['XPHB']);
@@ -71,6 +71,28 @@ const CANONICAL_CLASSES = new Set([
   'arcane-trickster',
 ]);
 
+/**
+ * Map of Dear-Mercy CSV class hashtags (lowercase, no #) to canonical ids.
+ * EK and AT are not in Dear-Mercy — they are auto-derived from wizard.
+ */
+const DM_CLASS_MAP = {
+  bard: 'bard',
+  cleric: 'cleric',
+  druid: 'druid',
+  paladin: 'paladin',
+  ranger: 'ranger',
+  sorcerer: 'sorcerer',
+  warlock: 'warlock',
+  wizard: 'wizard',
+};
+
+/** Canonical sort order for class output */
+const CLASS_ORDER = [
+  'bard', 'cleric', 'druid', 'paladin', 'ranger',
+  'sorcerer', 'warlock', 'wizard',
+  'arcane-trickster', 'eldritch-knight',
+];
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -85,9 +107,127 @@ function slugify(name) {
     .replace(/^-+|-+$/g, ''); // trim leading/trailing dashes
 }
 
-/** Normalize a name for lookup matching (lowercase, trimmed). */
+/** Normalize a name for lookup matching (lowercase, trimmed, / treated as space). */
 function normalizeName(name) {
-  return name.toLowerCase().trim();
+  return name.toLowerCase().trim().replace(/\//g, ' ');
+}
+
+/**
+ * Strip 5etools inline markup from a string.
+ * Patterns: {@tag content}, {@tag content|source}, {@tag content|opt|display}
+ * Strategy: take the first segment (content) as the display text.
+ */
+function stripMarkup(text) {
+  if (typeof text !== 'string') return '';
+  return text
+    .replace(/\{@\w+\s+([^|{}]+)(?:\|[^{}]*)?\}/g, (_, content) => content.trim())
+    .replace(/\{[^{}]*\}/g, '')
+    .replace(/  +/g, ' ')
+    .trim();
+}
+
+/**
+ * Parse a two-column CSV where the second column may be a multiline quoted string.
+ * Returns an array of [col1, col2] pairs.
+ */
+function parseCSV(text) {
+  const rows = [];
+  let i = 0;
+  const len = text.length;
+
+  while (i < len) {
+    // Skip blank lines
+    while (i < len && (text[i] === '\r' || text[i] === '\n')) i++;
+    if (i >= len) break;
+
+    // Col 1: unquoted, up to first comma
+    const commaIdx = text.indexOf(',', i);
+    if (commaIdx === -1) break;
+    const col1 = text.slice(i, commaIdx).trim();
+    i = commaIdx + 1;
+
+    // Col 2: quoted value (handles embedded newlines and doubled-quote escapes)
+    let col2 = '';
+    if (text[i] === '"') {
+      i++;
+      while (i < len) {
+        if (text[i] === '"' && text[i + 1] === '"') {
+          col2 += '"';
+          i += 2;
+        } else if (text[i] === '"') {
+          i++;
+          break;
+        } else {
+          col2 += text[i++];
+        }
+      }
+    } else {
+      // Unquoted — consume until newline
+      const nl = text.indexOf('\n', i);
+      col2 = nl === -1 ? text.slice(i) : text.slice(i, nl);
+      i = nl === -1 ? len : nl + 1;
+    }
+
+    if (col1) rows.push([col1, col2]);
+  }
+  return rows;
+}
+
+/**
+ * Parse a Dear-Mercy description block (the second CSV column) into
+ * { description, higherLevel, classes }.
+ *
+ * Block format (trimmed):
+ *   level N - #school [( #ritual )] Casting Time: … Range: … Components: … Duration: …
+ *
+ *   [body paragraphs]
+ *
+ *   [Using a Higher-Level Spell Slot. … / Cantrip Upgrade. …]
+ *
+ *   #Class1 #Class2 …
+ */
+function parseDearMercyBlock(block) {
+  const lines = block.split('\n').map((l) => l.trim());
+
+  // First line is the metadata header — skip it
+  const bodyLines = lines.slice(1);
+
+  // Find the class tags line: last non-empty line consisting only of #Word tokens
+  let classLine = '';
+  let bodyEnd = bodyLines.length;
+  for (let j = bodyLines.length - 1; j >= 0; j--) {
+    if (!bodyLines[j]) continue;
+    if (/^(#[A-Za-z]+\s*)+$/.test(bodyLines[j])) {
+      classLine = bodyLines[j];
+      bodyEnd = j;
+    }
+    break;
+  }
+
+  const contentLines = bodyLines.slice(0, bodyEnd);
+
+  // Split description / higherLevel at "Using a Higher-Level Spell Slot" or "Cantrip Upgrade"
+  const HIGHER_RE = /^(Using a Higher-Level Spell Slot|Cantrip Upgrade|At Higher Levels)[.:]?/i;
+  let splitIdx = contentLines.findIndex((l) => HIGHER_RE.test(l));
+
+  let descLines, higherLines;
+  if (splitIdx >= 0) {
+    descLines = contentLines.slice(0, splitIdx);
+    higherLines = contentLines.slice(splitIdx);
+  } else {
+    descLines = contentLines;
+    higherLines = [];
+  }
+
+  const description = descLines.filter(Boolean).join('\n\n').trim();
+  const higherLevel = higherLines.filter(Boolean).join('\n\n').trim() || undefined;
+
+  // Extract classes from hashtag tokens
+  const classes = (classLine.match(/#([A-Za-z]+)/g) ?? [])
+    .map((tag) => DM_CLASS_MAP[tag.slice(1).toLowerCase()])
+    .filter(Boolean);
+
+  return { description, higherLevel, classes };
 }
 
 // ---------------------------------------------------------------------------
@@ -312,12 +452,12 @@ function parseClasses(classes) {
  */
 function flattenEntries(entries) {
   if (!entries) return '';
-  if (typeof entries === 'string') return entries;
+  if (typeof entries === 'string') return stripMarkup(entries);
   if (!Array.isArray(entries)) return '';
 
   return entries
     .map((entry) => {
-      if (typeof entry === 'string') return entry;
+      if (typeof entry === 'string') return stripMarkup(entry);
       if (typeof entry !== 'object' || entry === null) return '';
 
       switch (entry.type) {
@@ -360,6 +500,14 @@ async function fetchJson(url) {
     throw new Error(`HTTP ${res.status} ${res.statusText} fetching ${url}`);
   }
   return res.json();
+}
+
+async function fetchText(url) {
+  const res = await fetch(url);
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} ${res.statusText} fetching ${url}`);
+  }
+  return res.text();
 }
 
 // ---------------------------------------------------------------------------
@@ -436,91 +584,32 @@ async function fetch5etoolsSpells() {
 }
 
 /**
- * Fetch and parse Dear-Mercy description data.
- * Returns an array of raw objects (structure TBD at runtime).
- *
- * The Dear-Mercy repo likely has one of these shapes:
- *   - Array of spell objects with { name, description, higherLevel } or similar
- *   - Object keyed by spell name
- *
- * We handle both.
+ * Fetch and parse Dear-Mercy CSV.
+ * Returns a Map<normalizedName, { description, higherLevel, classes }>.
  */
 async function fetchDearMercySpells() {
   console.log(`Fetching Dear-Mercy data from: ${DEAR_MERCY_URL}`);
 
-  let raw;
+  let csvText;
   try {
-    raw = await fetchJson(DEAR_MERCY_URL);
+    csvText = await fetchText(DEAR_MERCY_URL);
   } catch (err) {
     process.stderr.write(
       `[WARN] Could not fetch Dear-Mercy data (${err.message}). Proceeding with 5etools data only.\n`
     );
-    return [];
+    return new Map();
   }
 
-  // Normalize to array
-  if (Array.isArray(raw)) {
-    console.log(`  Dear-Mercy spells found: ${raw.length}`);
-    return raw;
+  const rows = parseCSV(csvText);
+  console.log(`  Dear-Mercy spells found: ${rows.length}`);
+
+  const map = new Map();
+  for (const [name, block] of rows) {
+    if (!name) continue;
+    const parsed = parseDearMercyBlock(block);
+    map.set(normalizeName(name), { name, ...parsed });
   }
-
-  if (typeof raw === 'object' && raw !== null) {
-    // Could be { spells: [...] } or { name: spellObj, ... }
-    if (Array.isArray(raw.spells)) {
-      console.log(`  Dear-Mercy spells found (via .spells): ${raw.spells.length}`);
-      return raw.spells;
-    }
-    // Treat as name→object map
-    const entries = Object.entries(raw).map(([key, val]) => ({
-      name: val.name ?? key,
-      ...val,
-    }));
-    console.log(`  Dear-Mercy spells found (name-keyed object): ${entries.length}`);
-    return entries;
-  }
-
-  process.stderr.write(
-    '[WARN] Dear-Mercy data is in an unrecognized format. Skipping descriptions.\n'
-  );
-  return [];
-}
-
-// ---------------------------------------------------------------------------
-// Prose extraction from Dear-Mercy entries
-// ---------------------------------------------------------------------------
-
-/**
- * Best-effort extraction of description and higherLevel prose from a
- * Dear-Mercy entry. The exact field names are inferred from common patterns
- * observed in community D&D JSON repositories.
- */
-function extractDearMercyProse(entry) {
-  // Attempt various common field name conventions
-  const description =
-    entry.description ??
-    entry.desc ??
-    entry.text ??
-    entry.body ??
-    (Array.isArray(entry.entries) ? flattenEntries(entry.entries) : undefined) ??
-    '';
-
-  const higherLevel =
-    entry.higherLevel ??
-    entry.higher_level ??
-    entry.atHigherLevels ??
-    entry.at_higher_levels ??
-    (Array.isArray(entry.higher_level_desc) ? entry.higher_level_desc.join('\n') : undefined) ??
-    undefined;
-
-  return {
-    description: typeof description === 'string' ? description : flattenEntries(description),
-    higherLevel:
-      higherLevel != null
-        ? typeof higherLevel === 'string'
-          ? higherLevel
-          : flattenEntries(higherLevel)
-        : undefined,
-  };
+  return map;
 }
 
 // ---------------------------------------------------------------------------
@@ -536,83 +625,94 @@ function extractDearMercyProse(entry) {
  *   2. Dear-Mercy-only entries: include with fields mapped to schema; warn.
  *   3. 5etools-only entries: include as-is; warn.
  */
-function mergeSpells(fivetoolsMap, dearMercyEntries, verbose = false) {
-  const output = new Map(fivetoolsMap); // copy — keyed by normalizedName
+/**
+ * Merge 5etools and Dear-Mercy data.
+ * dearMercyMap: Map<normalizedName, { name, description, higherLevel, classes }>
+ */
+function mergeSpells(fivetoolsMap, dearMercyMap, verbose = false) {
+  const output = new Map();
   const dearMercyMatched = new Set();
 
-  for (const dmEntry of dearMercyEntries) {
-    const rawName = dmEntry.name ?? '';
-    if (!rawName) {
-      process.stderr.write('[WARN] Dear-Mercy entry missing name, skipping.\n');
-      continue;
+  // Process all 5etools spells
+  for (const [key, spell] of fivetoolsMap) {
+    const dm = dearMercyMap.get(key);
+
+    let classes;
+    let description = spell.description;
+    let higherLevel = spell.higherLevel;
+
+    if (dm) {
+      dearMercyMatched.add(key);
+      if (dm.description !== undefined) description = dm.description;
+      if (dm.higherLevel !== undefined) higherLevel = dm.higherLevel;
+      classes = dm.classes ?? [];
+    } else {
+      if (verbose) {
+        process.stderr.write(`[WARN] 5etools-only spell "${spell.name}" has no matching Dear-Mercy entry.\n`);
+      }
+      classes = spell.classes ?? [];
     }
 
-    const key = normalizeName(rawName);
-    const prose = extractDearMercyProse(dmEntry);
+    // Eldritch Knight and Arcane Trickster use the Wizard spell list
+    if (classes.includes('wizard') && !classes.includes('eldritch-knight')) {
+      classes = [...classes, 'eldritch-knight', 'arcane-trickster'];
+    }
 
-    if (output.has(key)) {
-      // Matched — overwrite prose fields only
-      const existing = output.get(key);
-      const merged = {
-        ...existing,
-        description: prose.description !== undefined ? prose.description : existing.description,
-      };
-      // Only set higherLevel if either prose or existing has it defined
-      if (prose.higherLevel !== undefined) {
-        merged.higherLevel = prose.higherLevel;
-      } else if (existing.higherLevel !== undefined) {
-        merged.higherLevel = existing.higherLevel;
-      }
-      output.set(key, merged);
-      dearMercyMatched.add(key);
+    // Sort into canonical order
+    classes = CLASS_ORDER.filter((c) => classes.includes(c));
+
+    const merged = { ...spell, description, classes };
+    if (higherLevel !== undefined) {
+      merged.higherLevel = higherLevel;
     } else {
-      // Dear-Mercy only — build a best-effort spell entry
-      if (verbose) {
-        process.stderr.write(
-          `[WARN] Dear-Mercy spell "${rawName}" not found in 5etools; including with partial data.\n`
-        );
-      }
+      delete merged.higherLevel;
+    }
+    output.set(key, merged);
+  }
 
+  // Include Dear-Mercy-only spells with a warning
+  let dmOnly = 0;
+  for (const [key, dm] of dearMercyMap) {
+    if (!dearMercyMatched.has(key)) {
+      if (verbose) {
+        process.stderr.write(`[WARN] Dear-Mercy spell "${dm.name}" not found in 5etools; including with partial data.\n`);
+      }
+      dmOnly++;
+      let classes = dm.classes ?? [];
+      if (classes.includes('wizard') && !classes.includes('eldritch-knight')) {
+        classes = [...classes, 'eldritch-knight', 'arcane-trickster'];
+      }
+      classes = CLASS_ORDER.filter((c) => classes.includes(c));
       const dmOnlyEntry = {
-        id: slugify(rawName),
-        name: rawName,
-        level: dmEntry.level ?? 0,
-        school: dmEntry.school ?? 'unknown',
-        castingTime: dmEntry.castingTime ?? dmEntry.casting_time ?? 'Unknown',
-        range: dmEntry.range ?? 'Unknown',
-        components: dmEntry.components ?? '',
-        duration: dmEntry.duration ?? 'Unknown',
-        concentration: dmEntry.concentration ?? false,
-        ritual: dmEntry.ritual ?? false,
-        description: prose.description,
-        ...(prose.higherLevel !== undefined ? { higherLevel: prose.higherLevel } : {}),
-        classes: dmEntry.classes ?? [],
+        id: slugify(dm.name),
+        name: dm.name,
+        level: 0,
+        school: 'unknown',
+        castingTime: 'Unknown',
+        range: 'Unknown',
+        components: '',
+        duration: 'Unknown',
+        concentration: false,
+        ritual: false,
+        description: dm.description ?? '',
+        classes,
+        ...(dm.higherLevel !== undefined ? { higherLevel: dm.higherLevel } : {}),
       };
       output.set(key, dmOnlyEntry);
     }
   }
 
-  // Warn about 5etools spells with no Dear-Mercy description
-  let unmatched5etools = 0;
-  for (const [key, spell] of fivetoolsMap) {
-    if (!dearMercyMatched.has(key)) {
-      if (verbose) {
-        process.stderr.write(
-          `[WARN] 5etools-only spell "${spell.name}" has no matching Dear-Mercy entry.\n`
-        );
-      }
-      unmatched5etools++;
-    }
-  }
-
+  const unmatched5etools = fivetoolsMap.size - dearMercyMatched.size;
   if (unmatched5etools > 0) {
     process.stderr.write(
-      `[INFO] ${unmatched5etools} 5etools spells had no matching Dear-Mercy entry (description kept from 5etools where available).\n`
+      `[INFO] ${unmatched5etools} 5etools spells had no matching Dear-Mercy entry (description from 5etools entries).\n`
     );
+  }
+  if (dmOnly > 0) {
+    process.stderr.write(`[INFO] ${dmOnly} Dear-Mercy-only spells included with partial metadata.\n`);
   }
 
   return Array.from(output.values()).sort((a, b) => {
-    // Sort by level, then alphabetically by name
     if (a.level !== b.level) return a.level - b.level;
     return a.name.localeCompare(b.name);
   });
@@ -631,14 +731,14 @@ async function main() {
   }
 
   // 1. Fetch sources
-  const [fivetoolsMap, dearMercyEntries] = await Promise.all([
+  const [fivetoolsMap, dearMercyMap] = await Promise.all([
     fetch5etoolsSpells(),
     fetchDearMercySpells(),
   ]);
 
   // 2. Merge
   console.log('\nMerging data sources...');
-  const spells = mergeSpells(fivetoolsMap, dearMercyEntries, verbose);
+  const spells = mergeSpells(fivetoolsMap, dearMercyMap, verbose);
 
   // 3. Stats
   const byLevel = {};
