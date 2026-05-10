@@ -52,14 +52,6 @@ function renderWithContext(overrides: Partial<AppContextValue>) {
 
 // --- Tests ---
 
-beforeEach(() => {
-  vi.stubGlobal('crypto', { randomUUID: vi.fn(() => 'test-uuid') });
-});
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
-
 it('1. renders nothing when settingsOpen=false', () => {
   const { container } = renderWithContext({ settingsOpen: false });
   expect(container.firstChild).toBeNull();
@@ -171,4 +163,86 @@ it('11. delete spellbook button dispatches DELETE_SPELLBOOK', () => {
   const deleteSbBtn = screen.getByRole('button', { name: /delete spellbook tome of fire/i });
   fireEvent.click(deleteSbBtn);
   expect(dispatch).toHaveBeenCalledWith({ type: 'DELETE_SPELLBOOK', spellbookId: 'sb1' });
+});
+
+it('12. clicking backdrop calls setSettingsOpen(false)', () => {
+  const setSettingsOpen = vi.fn();
+  const { container } = renderWithContext({ setSettingsOpen });
+  // The backdrop is the first fixed div (z-40) with aria-hidden
+  const backdrop = container.querySelector('[aria-hidden="true"]') as HTMLElement;
+  expect(backdrop).toBeTruthy();
+  fireEvent.click(backdrop);
+  expect(setSettingsOpen).toHaveBeenCalledWith(false);
+});
+
+it('13. pressing Enter in the profile name input dispatches CREATE_PROFILE', () => {
+  const dispatch = vi.fn();
+  renderWithContext({ dispatch });
+  const input = screen.getByRole('textbox', { name: /new profile name/i });
+  fireEvent.change(input, { target: { value: 'KeyboardHero' } });
+  fireEvent.keyDown(input, { key: 'Enter' });
+  expect(dispatch).toHaveBeenCalledWith(
+    expect.objectContaining({
+      type: 'CREATE_PROFILE',
+      profile: expect.objectContaining({ name: 'KeyboardHero' }),
+    })
+  );
+});
+
+it('14. "−" button decrements level from 5 to 4', () => {
+  const dispatch = vi.fn();
+  renderWithContext({ dispatch });
+  const decreaseBtn = screen.getByRole('button', { name: /decrease level for entry 1/i });
+  fireEvent.click(decreaseBtn);
+  expect(dispatch).toHaveBeenCalledWith({
+    type: 'UPDATE_PROFILE',
+    profileId: 'p1',
+    updates: {
+      classEntries: [{ class: 'wizard', level: 4 }],
+    },
+  });
+});
+
+it('15. "−" button does not go below level 1', () => {
+  const dispatch = vi.fn();
+  const profileAtLevel1: Profile = {
+    ...profile1,
+    classEntries: [{ class: 'wizard', level: 1 }],
+  };
+  renderWithContext({ dispatch, activeProfile: profileAtLevel1 });
+  const decreaseBtn = screen.getByRole('button', { name: /decrease level for entry 1/i });
+  fireEvent.click(decreaseBtn);
+  expect(dispatch).toHaveBeenCalledWith({
+    type: 'UPDATE_PROFILE',
+    profileId: 'p1',
+    updates: {
+      classEntries: [{ class: 'wizard', level: 1 }],
+    },
+  });
+});
+
+it('16. "+" button does not go above level 20', () => {
+  const dispatch = vi.fn();
+  const profileAtLevel20: Profile = {
+    ...profile1,
+    classEntries: [{ class: 'wizard', level: 20 }],
+  };
+  renderWithContext({ dispatch, activeProfile: profileAtLevel20 });
+  const increaseBtn = screen.getByRole('button', { name: /increase level for entry 1/i });
+  fireEvent.click(increaseBtn);
+  expect(dispatch).toHaveBeenCalledWith({
+    type: 'UPDATE_PROFILE',
+    profileId: 'p1',
+    updates: {
+      classEntries: [{ class: 'wizard', level: 20 }],
+    },
+  });
+});
+
+it('17. Create button with empty input does not dispatch', () => {
+  const dispatch = vi.fn();
+  renderWithContext({ dispatch });
+  const createBtn = screen.getByRole('button', { name: 'Create' });
+  fireEvent.click(createBtn);
+  expect(dispatch).not.toHaveBeenCalled();
 });

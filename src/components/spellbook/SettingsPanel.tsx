@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useApp } from './SpellbookApp';
 import type { ClassEntry, SpellcastingClass } from '../../types/spellbook';
 
@@ -10,6 +10,9 @@ const SPELLCASTING_CLASSES: SpellcastingClass[] = [
 export default function SettingsPanel() {
   const { state, dispatch, activeProfile, settingsOpen, setSettingsOpen } = useApp();
   const [newProfileName, setNewProfileName] = useState('');
+  const entryKeysRef = useRef<string[]>(
+    activeProfile ? activeProfile.classEntries.map((_, i) => `init-${i}`) : []
+  );
 
   if (!settingsOpen) return null;
 
@@ -40,6 +43,7 @@ export default function SettingsPanel() {
 
   function handleAddClass() {
     if (!activeProfile) return;
+    entryKeysRef.current = [...entryKeysRef.current, `key-${Date.now()}-${Math.random()}`];
     handleUpdateClassEntries([
       ...activeProfile.classEntries,
       { class: 'wizard', level: 1 },
@@ -48,6 +52,7 @@ export default function SettingsPanel() {
 
   function handleRemoveClass(index: number) {
     if (!activeProfile) return;
+    entryKeysRef.current = entryKeysRef.current.filter((_, i) => i !== index);
     const entries = activeProfile.classEntries.filter((_, i) => i !== index);
     handleUpdateClassEntries(entries);
   }
@@ -85,6 +90,7 @@ export default function SettingsPanel() {
         className="fixed right-0 top-0 bottom-0 w-80 z-50 overflow-y-auto flex flex-col"
         style={{ backgroundColor: 'var(--sp-cream)', color: 'var(--sp-plum)' }}
         role="dialog"
+        aria-modal="true"
         aria-label="Settings"
       >
         {/* Header */}
@@ -131,7 +137,7 @@ export default function SettingsPanel() {
                     <button
                       className="font-lora text-sm text-left flex-1"
                       style={{
-                        color: isActive ? 'var(--sp-plum)' : 'var(--sp-plum)',
+                        color: 'var(--sp-plum)',
                         fontWeight: isActive ? 700 : 400,
                       }}
                       onClick={() =>
@@ -186,7 +192,7 @@ export default function SettingsPanel() {
 
               <ul className="space-y-2 mb-2">
                 {activeProfile.classEntries.map((entry, i) => (
-                  <li key={i} className="flex items-center gap-2">
+                  <li key={entryKeysRef.current[i] ?? i} className="flex items-center gap-2">
                     {/* Class dropdown */}
                     <select
                       value={entry.class}
