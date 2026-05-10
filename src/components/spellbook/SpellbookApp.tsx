@@ -9,6 +9,7 @@ import ProfileBar from './ProfileBar';
 import SlotTracker from './SlotTracker';
 import BrowseToggle from './BrowseToggle';
 import SpellList from './SpellList';
+import SpellDetail from './SpellDetail';
 
 const EMPTY_CLASS_ENTRIES: ClassEntry[] = [];
 
@@ -81,6 +82,7 @@ export default function SpellbookApp() {
             </div>
           </div>
         )}
+        <SpellDetail />
       </div>
     </AppContext.Provider>
   );
