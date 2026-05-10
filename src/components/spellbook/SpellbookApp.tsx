@@ -2,9 +2,11 @@ import React, { createContext, useContext, useState, useEffect, useMemo } from '
 import { useSpellbook } from '../../hooks/useSpellbook';
 import { useSlots } from '../../hooks/useSlots';
 import spellsData from '../../data/spells-5e2024.json';
-import type { AppState, Profile, Spellbook, Spell } from '../../types/spellbook';
+import type { AppState, Profile, Spellbook, Spell, ClassEntry } from '../../types/spellbook';
 import type { Action } from '../../hooks/useSpellbook';
 import type { SlotSummary } from '../../hooks/useSlots';
+
+const EMPTY_CLASS_ENTRIES: ClassEntry[] = [];
 
 export interface AppContextValue {
   state: AppState;
@@ -24,14 +26,16 @@ export interface AppContextValue {
 export const AppContext = React.createContext<AppContextValue>(null!);
 
 export function useApp(): AppContextValue {
-  return useContext(AppContext);
+  const ctx = useContext(AppContext);
+  if (!ctx) throw new Error('useApp must be used within SpellbookApp');
+  return ctx;
 }
 
 export default function SpellbookApp() {
   const { state, dispatch } = useSpellbook();
   const activeProfile = state.profiles.find(p => p.id === state.activeProfileId);
   const activeSpellbook = activeProfile?.spellbooks.find(sb => sb.id === activeProfile.activeSpellbookId);
-  const slots = useSlots(activeProfile?.classEntries ?? []);
+  const slots = useSlots(activeProfile?.classEntries ?? EMPTY_CLASS_ENTRIES);
   const allSpells = spellsData as Spell[];
 
   const [selectedSpellId, setSelectedSpellId] = useState<string | null>(null);

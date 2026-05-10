@@ -1,16 +1,16 @@
 import { render, screen } from '@testing-library/react';
 import SpellbookApp from './SpellbookApp';
 
-// Mock localStorage
 beforeEach(() => {
-  Object.defineProperty(window, 'localStorage', {
-    value: {
-      getItem: vi.fn(() => null),
-      setItem: vi.fn(),
-      removeItem: vi.fn(),
-    },
-    writable: true,
+  vi.stubGlobal('localStorage', {
+    getItem: vi.fn(() => null),
+    setItem: vi.fn(),
+    removeItem: vi.fn(),
   });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 it('renders without crashing', () => {
