@@ -31,7 +31,7 @@ export default function SpellCard({ spell, profileClasses, isInSpellbook: _isInS
         backgroundColor: isSelected ? 'var(--sp-pink-pale)' : 'var(--sp-cream)',
       }}
       onClick={onClick}
-      aria-selected={isSelected}
+      aria-pressed={isSelected}
       aria-label={spell.name}
     >
       <span className="flex-1 text-sm font-cinzel font-semibold truncate" style={{ color: 'var(--sp-plum)' }}>

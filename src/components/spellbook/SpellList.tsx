@@ -3,13 +3,18 @@ import { useApp } from './SpellbookApp';
 import SpellCard from './SpellCard';
 import type { Spell } from '../../types/spellbook';
 
+const ALL_CLASSES = ['wizard', 'sorcerer', 'bard', 'cleric', 'druid', 'paladin', 'ranger', 'warlock', 'eldritch-knight', 'arcane-trickster'];
+
 export default function SpellList() {
   const { allSpells, activeProfile, activeSpellbook, browseMode, selectedSpellId, setSelectedSpellId } = useApp();
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('my-classes');
   const [levelFilter, setLevelFilter] = useState('all');
 
-  const profileClasses = activeProfile?.classEntries.map(e => e.class) ?? [];
+  const profileClasses = useMemo(
+    () => activeProfile?.classEntries.map(e => e.class) ?? [],
+    [activeProfile?.classEntries]
+  );
 
   const visibleSpells = useMemo(() => {
     let spells: Spell[];
@@ -18,7 +23,6 @@ export default function SpellList() {
       const ids = new Set(activeSpellbook?.spellIds ?? []);
       spells = allSpells.filter(s => ids.has(s.id));
     } else {
-      // Browse All
       if (classFilter === 'my-classes') {
         spells = profileClasses.length > 0
           ? allSpells.filter(s => s.classes.some(c => profileClasses.includes(c)))
@@ -28,13 +32,11 @@ export default function SpellList() {
       }
     }
 
-    // Search filter
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       spells = spells.filter(s => s.name.toLowerCase().includes(q));
     }
 
-    // Level filter
     if (levelFilter !== 'all') {
       const lvl = levelFilter === 'cantrip' ? 0 : Number(levelFilter);
       spells = spells.filter(s => s.level === lvl);
@@ -44,8 +46,6 @@ export default function SpellList() {
   }, [allSpells, activeSpellbook, browseMode, profileClasses, search, classFilter, levelFilter]);
 
   const spellbookIds = new Set(activeSpellbook?.spellIds ?? []);
-
-  const allClasses = ['my-classes', 'wizard', 'sorcerer', 'bard', 'cleric', 'druid', 'paladin', 'ranger', 'warlock', 'eldritch-knight', 'arcane-trickster'];
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
@@ -69,7 +69,7 @@ export default function SpellList() {
             aria-label="Filter by class"
           >
             <option value="my-classes">My Classes</option>
-            {allClasses.slice(1).map(c => (
+            {ALL_CLASSES.map(c => (
               <option key={c} value={c}>{c}</option>
             ))}
           </select>

@@ -80,7 +80,7 @@ it('calls onClick when clicked', () => {
   expect(onClick).toHaveBeenCalledTimes(1);
 });
 
-it('has aria-selected=true when isSelected', () => {
+it('has aria-pressed=true when isSelected', () => {
   const spell = makeSpell();
   render(
     <SpellCard
@@ -91,6 +91,6 @@ it('has aria-selected=true when isSelected', () => {
       onClick={vi.fn()}
     />
   );
-  const btn = screen.getByRole('button', { name: 'Fireball' });
-  expect(btn).toHaveAttribute('aria-selected', 'true');
+  const btn = screen.getByRole('button', { name: 'Fireball', pressed: true });
+  expect(btn).toBeInTheDocument();
 });
