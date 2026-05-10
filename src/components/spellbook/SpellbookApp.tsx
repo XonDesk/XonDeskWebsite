@@ -74,7 +74,7 @@ export default function SpellbookApp() {
           <SpellList />
         </main>
 
-        {settingsOpen && <SettingsPanel />}
+        <SettingsPanel />
         <SpellDetail />
       </div>
     </AppContext.Provider>
