@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from './SpellbookApp';
 import SpellCard from './SpellCard';
+import { LevelPills } from './LevelPills';
 import type { Spell } from '../../types/spellbook';
 
 const ALL_CLASSES = ['wizard', 'sorcerer', 'bard', 'cleric', 'druid', 'paladin', 'ranger', 'warlock', 'eldritch-knight', 'arcane-trickster'];
@@ -25,7 +26,7 @@ export default function SpellList() {
     } else {
       if (classFilter === 'my-classes') {
         spells = profileClasses.length > 0
-          ? allSpells.filter(s => s.classes.some(c => profileClasses.includes(c)))
+          ? allSpells.filter(s => s.classes.some(c => profileClasses.includes(c as never)))
           : allSpells;
       } else {
         spells = allSpells.filter(s => s.classes.includes(classFilter));
@@ -49,8 +50,7 @@ export default function SpellList() {
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
-      {/* Search + filters */}
-      <div className="flex gap-2 px-4 py-2 border-b" style={{ borderColor: 'var(--sp-pink-soft)', backgroundColor: 'var(--sp-cream)' }}>
+      <div className="flex gap-2 px-4 py-2 border-b" style={{ borderColor: 'var(--sp-pink-soft)', backgroundColor: 'var(--sp-bg)' }}>
         <input
           type="search"
           placeholder="Search spells..."
@@ -74,19 +74,10 @@ export default function SpellList() {
             ))}
           </select>
         )}
-        <select
-          value={levelFilter}
-          onChange={e => setLevelFilter(e.target.value)}
-          className="text-xs px-1 rounded border"
-          style={{ borderColor: 'var(--sp-pink-soft)', color: 'var(--sp-plum)' }}
-          aria-label="Filter by level"
-        >
-          <option value="all">All Levels</option>
-          <option value="cantrip">Cantrip</option>
-          {[1,2,3,4,5,6,7,8,9].map(l => (
-            <option key={l} value={l}>{l}</option>
-          ))}
-        </select>
+      </div>
+
+      <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--sp-pink-soft)', backgroundColor: 'var(--sp-bg)' }}>
+        <LevelPills value={levelFilter} onChange={setLevelFilter} />
       </div>
 
       {/* Spell cards */}

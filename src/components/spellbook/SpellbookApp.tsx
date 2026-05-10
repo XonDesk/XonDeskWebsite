@@ -9,7 +9,7 @@ import ProfileBar from './ProfileBar';
 import SlotTracker from './SlotTracker';
 import BrowseToggle from './BrowseToggle';
 import SpellList from './SpellList';
-import SpellDetail from './SpellDetail';
+import OnboardingWizard from './OnboardingWizard';
 import SettingsPanel from './SettingsPanel';
 
 const EMPTY_CLASS_ENTRIES: ClassEntry[] = [];
@@ -47,9 +47,10 @@ export default function SpellbookApp() {
   const [selectedSpellId, setSelectedSpellId] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [browseMode, setBrowseMode] = useState<'mine' | 'all'>('mine');
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   useEffect(() => {
-    if (state.profiles.length === 0) setSettingsOpen(true);
+    if (state.profiles.length === 0) setWizardOpen(true);
   }, [state.profiles.length]);
 
   const contextValue: AppContextValue = useMemo(() => ({
@@ -61,21 +62,26 @@ export default function SpellbookApp() {
 
   return (
     <AppContext.Provider value={contextValue}>
-      <div className="flex flex-col min-h-screen font-lora" style={{ backgroundColor: 'var(--sp-pink-pale)' }}>
+      <div className="flex flex-col min-h-screen font-lora" style={{ backgroundColor: 'var(--sp-bg)' }}>
         <ProfileBar />
 
         <SlotTracker />
 
         {/* Main content */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--sp-pink-soft)', backgroundColor: 'var(--sp-cream)' }}>
-            <BrowseToggle />
-          </div>
-          <SpellList />
+          {wizardOpen ? (
+            <OnboardingWizard onComplete={() => setWizardOpen(false)} />
+          ) : (
+            <>
+              <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--sp-pink-soft)', backgroundColor: 'var(--sp-bg)' }}>
+                <BrowseToggle />
+              </div>
+              <SpellList />
+            </>
+          )}
         </main>
 
         <SettingsPanel />
-        <SpellDetail />
       </div>
     </AppContext.Provider>
   );

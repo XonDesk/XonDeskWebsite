@@ -44,7 +44,7 @@ export default function SlotTracker() {
   return (
     <section
       className="overflow-x-auto border-b px-4 py-3"
-      style={{ backgroundColor: 'var(--sp-cream)', borderColor: 'var(--sp-pink-soft)' }}
+      style={{ backgroundColor: 'var(--sp-card)', borderColor: 'var(--sp-pink-soft)' }}
       aria-label="Spell slots"
     >
       <div className="flex gap-6 min-w-max items-start">

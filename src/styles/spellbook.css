@@ -1,24 +1,39 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
 
 :root {
-  --sp-pink-hot:  #F72585;
-  --sp-pink-soft: #FFB3C6;
-  --sp-pink-pale: #FFF0F5;
-  --sp-plum:      #3D0C45;
-  --sp-cream:     #FFF8F0;
+  --sp-pink-hot:  #f72585;
+  --sp-pink-soft: #ff85c2;
+  --sp-bg:        #fff0f8;
+  --sp-card:      #ffffff;
+  --sp-plum:      #3d0c45;
+  --sp-muted:     #9b5a82;
+  --sp-badge-bg:  #ffb3d9;
   --sp-pact:      #9D4EDD;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sp-bg:        #1a0a1e;
+    --sp-card:      #2a0d35;
+    --sp-plum:      #ffb3e6;
+    --sp-muted:     #cc88bb;
+    --sp-badge-bg:  #5a1a6b;
+  }
+}
+
 @theme {
-  --color-sp-pink-hot:  #F72585;
-  --color-sp-pink-soft: #FFB3C6;
-  --color-sp-pink-pale: #FFF0F5;
-  --color-sp-plum:      #3D0C45;
-  --color-sp-cream:     #FFF8F0;
+  --color-sp-pink-hot:  #f72585;
+  --color-sp-pink-soft: #ff85c2;
+  --color-sp-bg:        #fff0f8;
+  --color-sp-card:      #ffffff;
+  --color-sp-plum:      #3d0c45;
+  --color-sp-muted:     #9b5a82;
+  --color-sp-badge-bg:  #ffb3d9;
   --color-sp-pact:      #9D4EDD;
 }
 
 @layer utilities {
   .font-cinzel { font-family: 'Cinzel', serif; }
   .font-lora { font-family: 'Lora', serif; }
+  .gradient-header { background: linear-gradient(135deg, #f72585 0%, #ff85c2 100%); }
 }
