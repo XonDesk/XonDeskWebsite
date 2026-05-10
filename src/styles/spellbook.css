@@ -1,0 +1,19 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
+
+:root {
+  --sp-pink-hot:  #F72585;
+  --sp-pink-soft: #FFB3C6;
+  --sp-pink-pale: #FFF0F5;
+  --sp-plum:      #3D0C45;
+  --sp-cream:     #FFF8F0;
+  --sp-pact:      #9D4EDD;
+}
+
+@theme {
+  --color-sp-pink-hot:  #F72585;
+  --color-sp-pink-soft: #FFB3C6;
+  --color-sp-pink-pale: #FFF0F5;
+  --color-sp-plum:      #3D0C45;
+  --color-sp-cream:     #FFF8F0;
+  --color-sp-pact:      #9D4EDD;
+}
