@@ -7,6 +7,8 @@ import type { Action } from '../../hooks/useSpellbook';
 import type { SlotSummary } from '../../hooks/useSlots';
 import ProfileBar from './ProfileBar';
 import SlotTracker from './SlotTracker';
+import BrowseToggle from './BrowseToggle';
+import SpellList from './SpellList';
 
 const EMPTY_CLASS_ENTRIES: ClassEntry[] = [];
 
@@ -64,8 +66,10 @@ export default function SpellbookApp() {
 
         {/* Main content */}
         <main className="flex-1 flex flex-col overflow-hidden">
-          {/* BrowseToggle + SpellList placeholder */}
-          <div className="p-4" style={{ color: 'var(--sp-plum)' }}>SpellList placeholder</div>
+          <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--sp-pink-soft)', backgroundColor: 'var(--sp-cream)' }}>
+            <BrowseToggle />
+          </div>
+          <SpellList />
         </main>
 
         {/* SettingsPanel placeholder (overlay) */}

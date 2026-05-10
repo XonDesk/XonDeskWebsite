@@ -15,7 +15,7 @@ afterEach(() => {
 
 it('renders without crashing', () => {
   render(<SpellbookApp />);
-  expect(screen.getByText(/Spellbook/i)).toBeInTheDocument();
+  expect(screen.getAllByText(/Spellbook/i).length).toBeGreaterThan(0);
 });
 
 it('opens settings when no profiles exist', () => {
