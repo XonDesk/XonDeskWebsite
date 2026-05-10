@@ -46,29 +46,28 @@ export default function ProfileBar() {
               <span aria-hidden="true">▾</span>
             </button>
             {profileMenuOpen && (
-              <ul
+              <div
                 className="absolute right-0 mt-1 min-w-[140px] rounded border shadow-lg z-20"
                 style={{ backgroundColor: 'var(--sp-cream)', borderColor: 'var(--sp-pink-soft)' }}
                 role="listbox"
               >
                 {state.profiles.map(p => (
-                  <li key={p.id}>
-                    <button
-                      className="w-full text-left px-3 py-2 text-sm hover:bg-sp-pink-pale"
-                      style={{
-                        color: 'var(--sp-plum)',
-                        fontWeight: p.id === state.activeProfileId ? 700 : 400,
-                        backgroundColor: p.id === state.activeProfileId ? 'var(--sp-pink-pale)' : undefined,
-                      }}
-                      role="option"
-                      aria-selected={p.id === state.activeProfileId}
-                      onClick={() => handleSelectProfile(p.id)}
-                    >
-                      {p.name}
-                    </button>
-                  </li>
+                  <button
+                    key={p.id}
+                    className="w-full text-left px-3 py-2 text-sm"
+                    style={{
+                      color: 'var(--sp-plum)',
+                      fontWeight: p.id === state.activeProfileId ? 700 : 400,
+                      backgroundColor: p.id === state.activeProfileId ? 'var(--sp-pink-pale)' : undefined,
+                    }}
+                    role="option"
+                    aria-selected={p.id === state.activeProfileId}
+                    onClick={() => handleSelectProfile(p.id)}
+                  >
+                    {p.name}
+                  </button>
                 ))}
-              </ul>
+              </div>
             )}
           </div>
 
@@ -96,6 +95,7 @@ export default function ProfileBar() {
                 color: sb.id === activeProfile.activeSpellbookId ? '#fff' : 'var(--sp-plum)',
                 borderColor: 'var(--sp-pink-hot)',
               }}
+              aria-current={sb.id === activeProfile.activeSpellbookId ? 'true' : undefined}
               onClick={() => handleSelectSpellbook(sb.id)}
             >
               {sb.name}
