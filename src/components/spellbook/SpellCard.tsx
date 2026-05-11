@@ -25,11 +25,14 @@ export default function SpellCard({ spell, profileClasses, isInSpellbook, isSele
   const subtitle = `${capitalize(spell.school)} · ${levelLabel}`;
 
   return (
-    <div>
+    <div
+      role="listitem"
+      className="rounded-lg overflow-hidden border"
+      style={{ borderColor: 'var(--sp-pink-soft)' }}
+    >
       <button
-        className="w-full text-left px-4 py-3 border-b flex items-center gap-3 transition-colors"
+        className="w-full text-left px-4 py-3 flex items-center gap-3 transition-colors"
         style={{
-          borderColor: 'var(--sp-pink-soft)',
           backgroundColor: isSelected ? 'var(--sp-bg)' : 'var(--sp-card)',
           borderLeft: isSelected ? '3px solid var(--sp-pink-hot)' : undefined,
         }}
@@ -38,7 +41,7 @@ export default function SpellCard({ spell, profileClasses, isInSpellbook, isSele
         aria-label={spell.name}
       >
         <div className="flex-1 min-w-0">
-          <div className="font-cinzel font-semibold text-sm truncate" style={{ color: 'var(--sp-plum)' }}>
+          <div className="font-lora font-semibold text-sm truncate" style={{ color: 'var(--sp-plum)' }}>
             {spell.name}
           </div>
           <div className="text-xs mt-0.5" style={{ color: 'var(--sp-muted)' }}>

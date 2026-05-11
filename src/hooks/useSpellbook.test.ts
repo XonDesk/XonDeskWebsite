@@ -125,6 +125,23 @@ describe('reducer', () => {
       const ids = s2.profiles[0].spellbooks[0].spellIds;
       expect(ids.filter((id) => id === 'fireball')).toHaveLength(1);
     });
+
+    it('auto-creates a spellbook and adds spell when profile has none', () => {
+      const state = stateWithProfile({ spellbooks: [], activeSpellbookId: '' });
+      const next = reducer(state, { type: 'ADD_SPELL', spellId: 'fireball' });
+      const profile = next.profiles[0];
+      expect(profile.spellbooks).toHaveLength(1);
+      expect(profile.spellbooks[0].spellIds).toContain('fireball');
+      expect(profile.activeSpellbookId).toBe(profile.spellbooks[0].id);
+    });
+
+    it('auto-creates a spellbook when activeSpellbookId is stale', () => {
+      const state = stateWithProfile({ spellbooks: [], activeSpellbookId: 'nonexistent' });
+      const next = reducer(state, { type: 'ADD_SPELL', spellId: 'shield' });
+      const profile = next.profiles[0];
+      expect(profile.spellbooks).toHaveLength(1);
+      expect(profile.spellbooks[0].spellIds).toContain('shield');
+    });
   });
 
   describe('REMOVE_SPELL', () => {
@@ -209,6 +226,14 @@ describe('reducer', () => {
       expect(newSb).toBeDefined();
       expect(newSb!.spellIds).toEqual([]);
       expect(profile.activeSpellbookId).toBe(newSb!.id);
+    });
+
+    it('uses the provided id when given', () => {
+      const state = stateWithProfile();
+      const next = reducer(state, { type: 'CREATE_SPELLBOOK', name: 'Ritual', id: 'preset-id' });
+      const newSb = next.profiles[0].spellbooks.find(sb => sb.id === 'preset-id');
+      expect(newSb).toBeDefined();
+      expect(next.profiles[0].activeSpellbookId).toBe('preset-id');
     });
   });
 

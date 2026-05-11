@@ -67,13 +67,14 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   const [level, setLevel] = useState(1);
 
   function handleFinish() {
+    const sbId = crypto.randomUUID();
     dispatch({
       type: 'CREATE_PROFILE',
       profile: {
         name: name.trim(),
         classEntries: [{ class: selectedClass, level }],
-        spellbooks: [],
-        activeSpellbookId: '',
+        spellbooks: [{ id: sbId, name: `${name.trim()}'s Spellbook`, spellIds: [] }],
+        activeSpellbookId: sbId,
         slotUsage: { regular: {}, pact: 0, arcanum: {} },
       },
     });

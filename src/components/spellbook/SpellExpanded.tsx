@@ -54,20 +54,16 @@ export default function SpellExpanded({ spell, isInSpellbook }: SpellExpandedPro
       )}
 
       <div style={{ marginBottom: '10px' }}>
-        <p
-          style={{
-            fontSize: '13px',
-            color: 'var(--sp-plum)',
-            lineHeight: '1.6',
-            overflow: descExpanded ? 'visible' : 'hidden',
-            display: descExpanded ? 'block' : '-webkit-box',
-            WebkitLineClamp: descExpanded ? undefined : 4,
-            WebkitBoxOrient: descExpanded ? undefined : 'vertical',
-            margin: 0,
-          } as React.CSSProperties}
-        >
-          {spell.description}
-        </p>
+        {descExpanded ? (
+          <p style={{ fontSize: '13px', color: 'var(--sp-plum)', lineHeight: '1.6', margin: 0 }}>
+            {spell.description}
+          </p>
+        ) : (
+          <p style={{ fontSize: '13px', color: 'var(--sp-plum)', lineHeight: '1.6', overflow: 'hidden',
+            display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', margin: 0 } as React.CSSProperties}>
+            {spell.description}
+          </p>
+        )}
         <button
           onClick={() => setDescExpanded(p => !p)}
           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--sp-pink-hot)', fontFamily: 'Cinzel, serif', fontSize: '11px', marginTop: '4px' }}

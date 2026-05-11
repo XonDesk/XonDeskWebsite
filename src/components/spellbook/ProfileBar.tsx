@@ -4,6 +4,8 @@ import { useApp } from './SpellbookApp';
 export default function ProfileBar() {
   const { state, dispatch, activeProfile, setSettingsOpen } = useApp();
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const [editingSpellbookId, setEditingSpellbookId] = useState<string | null>(null);
+  const [editName, setEditName] = useState('');
 
   function handleSelectProfile(id: string) {
     dispatch({ type: 'SET_ACTIVE_PROFILE', profileId: id });
@@ -14,10 +16,11 @@ export default function ProfileBar() {
     dispatch({ type: 'SET_ACTIVE_SPELLBOOK', spellbookId: id });
   }
 
-  function handleCreateSpellbook() {
-    const name = prompt('Spellbook name:');
-    if (!name?.trim()) return;
-    dispatch({ type: 'CREATE_SPELLBOOK', name: name.trim() });
+  function confirmRename(spellbookId: string) {
+    const name = editName.trim() || 'My Spellbook';
+    dispatch({ type: 'UPDATE_SPELLBOOK', spellbookId, updates: { name } });
+    setEditingSpellbookId(null);
+    setEditName('');
   }
 
   return (
@@ -92,26 +95,60 @@ export default function ProfileBar() {
           className="flex items-center gap-1 px-4 pb-2 pt-1 overflow-x-auto"
           style={{ background: 'linear-gradient(135deg, #c41068 0%, #9b0050 100%)' }}
         >
-          {activeProfile.spellbooks.map(sb => (
-            <button
-              key={sb.id}
-              className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-cinzel border transition-colors"
-              style={{
-                backgroundColor: sb.id === activeProfile.activeSpellbookId ? '#fff' : 'transparent',
-                color: sb.id === activeProfile.activeSpellbookId ? '#f72585' : '#fff',
-                borderColor: '#fff',
-              }}
-              aria-current={sb.id === activeProfile.activeSpellbookId ? 'true' : undefined}
-              onClick={() => handleSelectSpellbook(sb.id)}
-            >
-              {sb.name}
-            </button>
-          ))}
+          {activeProfile.spellbooks.map(sb => {
+            const isActive = sb.id === activeProfile.activeSpellbookId;
+            if (editingSpellbookId === sb.id) {
+              return (
+                <input
+                  key={sb.id}
+                  autoFocus
+                  value={editName}
+                  onChange={e => setEditName(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') confirmRename(sb.id);
+                    if (e.key === 'Escape') { setEditingSpellbookId(null); setEditName(''); }
+                  }}
+                  onBlur={() => confirmRename(sb.id)}
+                  className="flex-shrink-0 text-xs px-2 py-0.5 rounded-full border font-cinzel"
+                  style={{ backgroundColor: '#fff', color: '#f72585', borderColor: '#fff', width: '8rem', outline: 'none' }}
+                  aria-label="Rename spellbook"
+                />
+              );
+            }
+            return (
+              <button
+                key={sb.id}
+                className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-cinzel border transition-colors"
+                style={{
+                  backgroundColor: isActive ? '#fff' : 'transparent',
+                  color: isActive ? '#f72585' : '#fff',
+                  borderColor: '#fff',
+                }}
+                aria-current={isActive ? 'true' : undefined}
+                onClick={() => {
+                  if (isActive) {
+                    setEditingSpellbookId(sb.id);
+                    setEditName(sb.name);
+                  } else {
+                    handleSelectSpellbook(sb.id);
+                  }
+                }}
+                title={isActive ? 'Click to rename' : undefined}
+              >
+                {sb.name}
+              </button>
+            );
+          })}
           <button
             className="flex-shrink-0 px-2 py-1 rounded-full text-xs border"
             style={{ color: '#fff', borderColor: '#fff' }}
             aria-label="New spellbook"
-            onClick={handleCreateSpellbook}
+            onClick={() => {
+              const newId = crypto.randomUUID();
+              dispatch({ type: 'CREATE_SPELLBOOK', id: newId, name: 'New Spellbook' });
+              setEditingSpellbookId(newId);
+              setEditName('New Spellbook');
+            }}
           >
             +
           </button>

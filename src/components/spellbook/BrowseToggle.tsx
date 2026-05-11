@@ -15,7 +15,7 @@ export default function BrowseToggle() {
           aria-pressed={browseMode === mode}
           onClick={() => setBrowseMode(mode)}
         >
-          {mode === 'mine' ? 'My Spellbook' : 'Browse All'}
+          {mode === 'mine' ? 'My Spells' : 'Browse All'}
         </button>
       ))}
     </div>

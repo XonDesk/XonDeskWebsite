@@ -22,7 +22,7 @@ export const LevelPills: React.FC<LevelPillsProps> = ({ value, onChange }) => {
           key={pill.value}
           onClick={() => onChange(pill.value)}
           aria-pressed={value === pill.value}
-          className="flex-shrink-0 px-3 py-1 rounded-full text-xs font-cinzel border transition-colors"
+          className="flex-shrink-0 px-3 py-1 rounded-full text-xs border transition-colors"
           style={
             value === pill.value
               ? {

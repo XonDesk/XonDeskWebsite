@@ -1,6 +1,8 @@
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
 
 :root {
+  color-scheme: light dark;
   --sp-pink-hot:  #f72585;
   --sp-pink-soft: #ff85c2;
   --sp-bg:        #fff0f8;
@@ -30,6 +32,10 @@
   --color-sp-muted:     #9b5a82;
   --color-sp-badge-bg:  #ffb3d9;
   --color-sp-pact:      #9D4EDD;
+}
+
+body {
+  background-color: var(--sp-bg);
 }
 
 @layer utilities {

@@ -14,7 +14,7 @@ export type Action =
   | { type: 'CREATE_PROFILE'; profile: Omit<Profile, 'id'> }
   | { type: 'UPDATE_PROFILE'; profileId: string; updates: Partial<Omit<Profile, 'id'>> }
   | { type: 'DELETE_PROFILE'; profileId: string }
-  | { type: 'CREATE_SPELLBOOK'; name: string }
+  | { type: 'CREATE_SPELLBOOK'; name: string; id?: string }
   | { type: 'UPDATE_SPELLBOOK'; spellbookId: string; updates: Partial<Omit<Spellbook, 'id'>> }
   | { type: 'DELETE_SPELLBOOK'; spellbookId: string };
 
@@ -52,19 +52,25 @@ export function reducer(state: AppState, action: Action): AppState {
       }));
 
     case 'ADD_SPELL': {
-      return updateActiveProfile(state, (p) => ({
-        ...p,
-        spellbooks: p.spellbooks.map((sb) =>
-          sb.id === p.activeSpellbookId
-            ? {
-                ...sb,
-                spellIds: sb.spellIds.includes(action.spellId)
-                  ? sb.spellIds
-                  : [...sb.spellIds, action.spellId],
-              }
-            : sb
-        ),
-      }));
+      return updateActiveProfile(state, (p) => {
+        let base = p;
+        if (!p.activeSpellbookId || !p.spellbooks.find(sb => sb.id === p.activeSpellbookId)) {
+          const newId = crypto.randomUUID();
+          base = {
+            ...p,
+            spellbooks: [...p.spellbooks, { id: newId, name: `${p.name}'s Spellbook`, spellIds: [] }],
+            activeSpellbookId: newId,
+          };
+        }
+        return {
+          ...base,
+          spellbooks: base.spellbooks.map((sb) =>
+            sb.id === base.activeSpellbookId
+              ? { ...sb, spellIds: sb.spellIds.includes(action.spellId) ? sb.spellIds : [...sb.spellIds, action.spellId] }
+              : sb
+          ),
+        };
+      });
     }
 
     case 'REMOVE_SPELL': {
@@ -146,7 +152,7 @@ export function reducer(state: AppState, action: Action): AppState {
     }
 
     case 'CREATE_SPELLBOOK': {
-      const id = crypto.randomUUID();
+      const id = action.id ?? crypto.randomUUID();
       const newSpellbook: Spellbook = { id, name: action.name, spellIds: [] };
       return updateActiveProfile(state, (p) => ({
         ...p,
