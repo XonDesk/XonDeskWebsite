@@ -17,6 +17,7 @@ import DesktopSidebar from './DesktopSidebar';
 import ConcentrationBanner from './ConcentrationBanner';
 import StatReadout from './StatReadout';
 import SpellbookTabs from './SpellbookTabs';
+import SpellbookBackground from './SpellbookBackground';
 
 const EMPTY_CLASS_ENTRIES: ClassEntry[] = [];
 const AVATAR_HUES = [12, 200, 280, 50, 330, 130, 220, 260];
@@ -111,8 +112,14 @@ export default function SpellbookApp() {
     <AppContext.Provider value={contextValue}>
       <div
         className="font-inter min-h-screen lg:grid lg:grid-cols-[300px_1fr]"
-        style={{ backgroundColor: 'var(--sp-bg)', backgroundImage: 'var(--sp-bg-gradient)', color: 'var(--sp-text)' }}
+        style={{
+          position: 'relative',
+          backgroundColor: 'var(--sp-bg)',
+          ...(visualSettings.background !== 'clean' && { backgroundImage: 'var(--sp-bg-gradient)' }),
+          color: 'var(--sp-text)',
+        }}
       >
+        <SpellbookBackground background={visualSettings.background} />
         {/* Desktop sidebar — hidden on mobile */}
         <DesktopSidebar />
 
