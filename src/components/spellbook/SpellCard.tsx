@@ -1,6 +1,7 @@
 import type { Spell } from '../../types/spellbook';
 import { useApp } from './SpellbookApp';
 import SpellExpanded from './SpellExpanded';
+import CastPill from './CastPill';
 
 interface SpellCardProps {
   spell: Spell;
@@ -88,6 +89,8 @@ export default function SpellCard({ spell, profileClasses: _profileClasses, isIn
         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--sp-accent)', minWidth: '1.25rem', textAlign: 'center', flexShrink: 0 }}>
           {spell.level === 0 ? 'C' : spell.level}
         </span>
+
+        {browseMode === 'mine' && <CastPill spell={spell} />}
 
         <span style={{ fontSize: '0.75rem', color: 'var(--sp-label)', flexShrink: 0 }}>
           {isSelected ? '▲' : '▼'}
