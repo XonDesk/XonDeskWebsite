@@ -51,3 +51,9 @@ it('renders at least two new spellbook buttons (mobile + desktop sidebar) when a
   render(<SpellbookApp />);
   expect(screen.getAllByLabelText('New spellbook').length).toBeGreaterThanOrEqual(2);
 });
+
+it('renders the identity strip with name and class·level when a profile exists', () => {
+  render(<SpellbookApp />);
+  expect(screen.getAllByText('Lyra').length).toBeGreaterThanOrEqual(1);
+  expect(screen.getByText('Wizard · Lvl 5')).toBeInTheDocument();
+});

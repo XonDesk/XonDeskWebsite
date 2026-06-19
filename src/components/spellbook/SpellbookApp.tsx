@@ -127,6 +127,21 @@ export default function SpellbookApp() {
             <OnboardingWizard onComplete={() => setWizardOpen(false)} />
           ) : (
             <>
+              {activeProfile && (
+                <div
+                  className="lg:hidden"
+                  style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '4px 1rem 8px' }}
+                >
+                  <span className="font-italianno" style={{ fontSize: '1.875rem', color: 'var(--sp-text)', lineHeight: 1 }}>
+                    {activeProfile.name}
+                  </span>
+                  <span className="font-cormorant" style={{ fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--sp-label)' }}>
+                    {activeProfile.classEntries[0]
+                      ? `${activeProfile.classEntries[0].class.charAt(0).toUpperCase()}${activeProfile.classEntries[0].class.slice(1)} · Lvl ${activeProfile.classEntries[0].level}`
+                      : ''}
+                  </span>
+                </div>
+              )}
               <ConcentrationBanner />
               <div className="lg:hidden">
                 <StatReadout />
