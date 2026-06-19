@@ -16,7 +16,8 @@ export default function DesktopSidebar() {
         top: 0,
         height: '100vh',
         overflowY: 'auto',
-        background: 'linear-gradient(160deg, #f72585 0%, #c41068 100%)',
+        background: 'var(--sp-sidebar-glass)',
+        backdropFilter: 'blur(12px)',
         borderRight: '1px solid var(--sp-border)',
       }}
     >
@@ -24,9 +25,9 @@ export default function DesktopSidebar() {
       <div style={{ padding: '1.25rem 1rem 0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="M17 13A8 8 0 1 1 7 3a6 6 0 0 0 10 10z" fill="#fff" />
+            <path d="M17 13A8 8 0 1 1 7 3a6 6 0 0 0 10 10z" fill="var(--sp-accent)" />
           </svg>
-          <span className="font-italianno" style={{ fontSize: '1.5rem', color: '#fff', lineHeight: 1 }}>
+          <span className="font-italianno" style={{ fontSize: '1.5rem', color: 'var(--sp-text)', lineHeight: 1 }}>
             Spellbook
           </span>
         </div>
@@ -34,7 +35,7 @@ export default function DesktopSidebar() {
           type="button"
           aria-label="Settings"
           onClick={() => setSettingsOpen(true)}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#fff', fontSize: '1.125rem' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--sp-text-2)', fontSize: '1.125rem' }}
         >
           ⚙
         </button>
@@ -46,19 +47,16 @@ export default function DesktopSidebar() {
       </div>
 
       {/* Divider */}
-      <div style={{ borderTop: '1px solid rgba(255,255,255,0.2)', margin: '0 0.75rem' }} />
+      <div style={{ borderTop: '1px solid var(--sp-border)', margin: '0 0.75rem' }} />
 
-      {/* Stats + slots on white background section */}
-      <div style={{ background: 'var(--sp-bg)', flex: 1, display: 'flex', flexDirection: 'column' }}>
-        <StatReadout />
-        <SlotTracker />
+      <StatReadout />
+      <SlotTracker />
 
-        <div style={{ padding: '1rem 0 0.5rem' }}>
-          <div style={{ padding: '0 1rem 0.5rem', fontSize: '0.6875rem', color: 'var(--sp-label)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
-            Spellbooks
-          </div>
-          <SpellbookTabs variant="desktop" />
+      <div style={{ padding: '1rem 0 0.5rem', flex: 1 }}>
+        <div style={{ padding: '0 1rem 0.5rem', fontSize: '0.6875rem', color: 'var(--sp-label)', textTransform: 'uppercase', letterSpacing: '0.08em', fontFamily: 'Inter, sans-serif', fontWeight: 600 }}>
+          Spellbooks
         </div>
+        <SpellbookTabs variant="desktop" />
       </div>
     </aside>
   );
