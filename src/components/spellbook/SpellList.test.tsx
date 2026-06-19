@@ -146,9 +146,7 @@ it('level filter shows only matching level', () => {
     activeProfile: wizardWarlockProfile,
     activeSpellbook: spellbook,
   });
-  fireEvent.change(screen.getByRole('combobox', { name: /filter by level/i }), {
-    target: { value: '1' },
-  });
+  fireEvent.click(screen.getByRole('button', { name: 'Lvl 1' }));
   expect(screen.getByText('Hex')).toBeInTheDocument();
   expect(screen.queryByText('Fireball')).not.toBeInTheDocument();
   expect(screen.queryByText('Prestidigitation')).not.toBeInTheDocument();

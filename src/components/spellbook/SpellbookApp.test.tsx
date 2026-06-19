@@ -18,7 +18,7 @@ it('renders without crashing', () => {
   expect(screen.getAllByText(/Spellbook/i).length).toBeGreaterThan(0);
 });
 
-it('opens settings when no profiles exist', () => {
+it('shows onboarding wizard when no profiles exist', () => {
   render(<SpellbookApp />);
-  expect(screen.getByText('Settings')).toBeInTheDocument();
+  expect(screen.getByText('Welcome, Witch!')).toBeInTheDocument();
 });
