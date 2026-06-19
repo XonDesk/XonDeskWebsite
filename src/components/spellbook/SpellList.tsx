@@ -121,9 +121,19 @@ export default function SpellList() {
   }, [visibleSpells, groupBy]);
 
   return (
-    <div className="flex flex-col flex-1 overflow-hidden">
+    <div
+      className="flex flex-col flex-1 overflow-hidden"
+      style={{
+        margin: '12px 14px 14px',
+        borderRadius: 18,
+        background: 'var(--sp-card)',
+        backdropFilter: 'blur(8px)',
+        border: '1px solid var(--sp-border)',
+        boxShadow: 'var(--sp-list-shadow)',
+      }}
+    >
       {/* Search + class filter */}
-      <div className="flex gap-2 px-4 py-2 border-b" style={{ borderColor: 'var(--sp-border)', backgroundColor: 'var(--sp-bg)' }}>
+      <div className="flex gap-2 px-4 py-2 border-b" style={{ borderColor: 'var(--sp-border)' }}>
         <input
           type="search"
           placeholder="Search spells..."
@@ -160,7 +170,7 @@ export default function SpellList() {
         onCombatToggle={() => setCombatActive(a => !a)}
       />
 
-      <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--sp-border)', backgroundColor: 'var(--sp-bg)' }}>
+      <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--sp-border)' }}>
         <LevelPills value={levelFilter} onChange={setLevelFilter} />
       </div>
 

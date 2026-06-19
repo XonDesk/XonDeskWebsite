@@ -36,7 +36,7 @@ export default function SortGroupBar({
         gap: '0.5rem',
         padding: '0.5rem 1rem',
         borderBottom: '1px solid var(--sp-border)',
-        background: 'var(--sp-bg)',
+        background: 'transparent',
         flexWrap: 'wrap',
       }}
     >

@@ -18,6 +18,7 @@
   --sp-pact:            #9D4EDD;
   --sp-bg-gradient:     radial-gradient(120% 80% at 50% 0%, #ffeaf2, #fdf3f8);
   --sp-sidebar-glass:   rgba(255, 255, 255, 0.35);
+  --sp-list-shadow:     0 18px 40px -16px rgba(247,37,133,0.25);
 }
 
 .dark {
@@ -38,6 +39,7 @@
   --sp-pact:            #c084fc;
   --sp-bg-gradient:     radial-gradient(120% 80% at 50% 0%, #2a0820, #15050f);
   --sp-sidebar-glass:   rgba(15, 5, 15, 0.4);
+  --sp-list-shadow:     0 0 30px -6px rgba(247,37,133,0.25);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -59,6 +61,7 @@
     --sp-pact:            #c084fc;
     --sp-bg-gradient:     radial-gradient(120% 80% at 50% 0%, #2a0820, #15050f);
     --sp-sidebar-glass:   rgba(15, 5, 15, 0.4);
+    --sp-list-shadow:     0 0 30px -6px rgba(247,37,133,0.25);
   }
 }
 
