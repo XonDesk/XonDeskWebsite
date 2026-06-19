@@ -16,6 +16,12 @@ const profile1: Profile = {
   spellbooks: [spellbook1],
   activeSpellbookId: 'sb1',
   slotUsage: { regular: {}, pact: 0, arcanum: {} },
+  avatarHue: 12,
+  spellAbility: 'INT',
+  abilityMod: 3,
+  prepared: [],
+  favorites: [],
+  concentration: null,
 };
 
 const profile2: Profile = {
@@ -25,6 +31,12 @@ const profile2: Profile = {
   spellbooks: [spellbook2],
   activeSpellbookId: 'sb2',
   slotUsage: { regular: {}, pact: 0, arcanum: {} },
+  avatarHue: 200,
+  spellAbility: 'WIS',
+  abilityMod: 0,
+  prepared: [],
+  favorites: [],
+  concentration: null,
 };
 
 function renderWithContext(overrides: Partial<AppContextValue>) {
@@ -41,6 +53,16 @@ function renderWithContext(overrides: Partial<AppContextValue>) {
     setSettingsOpen: vi.fn(),
     browseMode: 'mine',
     setBrowseMode: vi.fn(),
+    profBonus: 3,
+    saveDC: 13,
+    spellAttack: 5,
+    preparedSet: new Set<string>(),
+    visualSettings: { theme: 'auto', density: 'cozy', background: 'clouds' },
+    setTheme: vi.fn(),
+    setDensity: vi.fn(),
+    setBackground: vi.fn(),
+    toast: null,
+    showToast: vi.fn(),
     ...overrides,
   };
   return render(

@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { useSpellbook } from '../../hooks/useSpellbook';
 import { useSlots } from '../../hooks/useSlots';
+import { useVisualSettings } from '../../hooks/useVisualSettings';
+import type { VisualSettings } from '../../hooks/useVisualSettings';
 import spellsData from '../../data/spells-5e2024.json';
 import type { AppState, Profile, Spellbook, Spell, ClassEntry } from '../../types/spellbook';
 import type { Action } from '../../hooks/useSpellbook';
@@ -11,8 +13,12 @@ import BrowseToggle from './BrowseToggle';
 import SpellList from './SpellList';
 import OnboardingWizard from './OnboardingWizard';
 import SettingsPanel from './SettingsPanel';
+import DesktopSidebar from './DesktopSidebar';
+import ConcentrationBanner from './ConcentrationBanner';
+import StatReadout from './StatReadout';
 
 const EMPTY_CLASS_ENTRIES: ClassEntry[] = [];
+const AVATAR_HUES = [12, 200, 280, 50, 330, 130, 220, 260];
 
 export interface AppContextValue {
   state: AppState;
@@ -27,6 +33,16 @@ export interface AppContextValue {
   setSettingsOpen: (open: boolean) => void;
   browseMode: 'mine' | 'all';
   setBrowseMode: (mode: 'mine' | 'all') => void;
+  profBonus: number;
+  saveDC: number;
+  spellAttack: number;
+  preparedSet: Set<string>;
+  visualSettings: VisualSettings;
+  setTheme: (theme: VisualSettings['theme']) => void;
+  setDensity: (density: VisualSettings['density']) => void;
+  setBackground: (background: VisualSettings['background']) => void;
+  toast: string | null;
+  showToast: (msg: string) => void;
 }
 
 export const AppContext = React.createContext<AppContextValue>(null!);
@@ -37,8 +53,11 @@ export function useApp(): AppContextValue {
   return ctx;
 }
 
+export { AVATAR_HUES };
+
 export default function SpellbookApp() {
   const { state, dispatch } = useSpellbook();
+  const { settings: visualSettings, setTheme, setDensity, setBackground } = useVisualSettings();
   const activeProfile = state.profiles.find(p => p.id === state.activeProfileId);
   const activeSpellbook = activeProfile?.spellbooks.find(sb => sb.id === activeProfile.activeSpellbookId);
   const slots = useSlots(activeProfile?.classEntries ?? EMPTY_CLASS_ENTRIES);
@@ -48,24 +67,59 @@ export default function SpellbookApp() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [browseMode, setBrowseMode] = useState<'mine' | 'all'>('mine');
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
     if (state.profiles.length === 0) setWizardOpen(true);
   }, [state.profiles.length]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 2600);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const primaryLevel = activeProfile?.classEntries[0]?.level ?? 1;
+  const profBonus = Math.ceil(primaryLevel / 4) + 1;
+  const abilityMod = activeProfile?.abilityMod ?? 0;
+  const saveDC = 8 + profBonus + abilityMod;
+  const spellAttack = profBonus + abilityMod;
+
+  const preparedSet = useMemo(() => {
+    const cantrips = (activeSpellbook?.spellIds ?? []).filter(id =>
+      allSpells.find(s => s.id === id && s.level === 0)
+    );
+    return new Set([...(activeProfile?.prepared ?? []), ...cantrips]);
+  }, [activeProfile?.prepared, activeSpellbook?.spellIds, allSpells]);
+
+  const showToast = (msg: string) => setToast(msg);
 
   const contextValue: AppContextValue = useMemo(() => ({
     state, dispatch, activeProfile, activeSpellbook, slots, allSpells,
     selectedSpellId, setSelectedSpellId,
     settingsOpen, setSettingsOpen,
     browseMode, setBrowseMode,
-  }), [state, dispatch, activeProfile, activeSpellbook, slots, selectedSpellId, settingsOpen, browseMode]);
+    profBonus, saveDC, spellAttack, preparedSet,
+    visualSettings, setTheme, setDensity, setBackground,
+    toast, showToast,
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }), [state, dispatch, activeProfile, activeSpellbook, slots, selectedSpellId, settingsOpen, browseMode,
+       profBonus, saveDC, spellAttack, preparedSet, visualSettings, toast]);
 
   return (
     <AppContext.Provider value={contextValue}>
-      <div className="flex flex-col min-h-screen font-lora" style={{ backgroundColor: 'var(--sp-bg)' }}>
-        <ProfileBar />
+      <div
+        className="font-inter min-h-screen lg:grid lg:grid-cols-[300px_1fr]"
+        style={{ backgroundColor: 'var(--sp-bg)', color: 'var(--sp-text)' }}
+      >
+        {/* Desktop sidebar — hidden on mobile */}
+        <DesktopSidebar />
 
-        <SlotTracker />
+        {/* Mobile header — hidden at desktop */}
+        <div className="lg:hidden">
+          <ProfileBar />
+          <StatReadout />
+        </div>
 
         {/* Main content */}
         <main className="flex-1 flex flex-col overflow-hidden">
@@ -73,7 +127,8 @@ export default function SpellbookApp() {
             <OnboardingWizard onComplete={() => setWizardOpen(false)} />
           ) : (
             <>
-              <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--sp-pink-soft)', backgroundColor: 'var(--sp-bg)' }}>
+              <ConcentrationBanner />
+              <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--sp-border)', backgroundColor: 'var(--sp-bg)' }}>
                 <BrowseToggle />
               </div>
               <SpellList />
@@ -82,6 +137,20 @@ export default function SpellbookApp() {
         </main>
 
         <SettingsPanel />
+
+        {toast && (
+          <div
+            style={{
+              position: 'fixed', bottom: '1.5rem', left: '50%', transform: 'translateX(-50%)',
+              background: 'var(--sp-text)', color: 'var(--sp-bg)',
+              padding: '0.5rem 1.25rem', borderRadius: '2rem',
+              fontSize: '0.875rem', fontWeight: 500, zIndex: 1000,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+            }}
+          >
+            {toast}
+          </div>
+        )}
       </div>
     </AppContext.Provider>
   );

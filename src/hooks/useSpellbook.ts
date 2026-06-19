@@ -16,7 +16,12 @@ export type Action =
   | { type: 'DELETE_PROFILE'; profileId: string }
   | { type: 'CREATE_SPELLBOOK'; name: string }
   | { type: 'UPDATE_SPELLBOOK'; spellbookId: string; updates: Partial<Omit<Spellbook, 'id'>> }
-  | { type: 'DELETE_SPELLBOOK'; spellbookId: string };
+  | { type: 'DELETE_SPELLBOOK'; spellbookId: string }
+  | { type: 'CAST_SPELL'; spellId: string; level: number; isConcentration: boolean }
+  | { type: 'TOGGLE_PREPARED'; spellId: string }
+  | { type: 'TOGGLE_FAVORITE'; spellId: string }
+  | { type: 'DROP_CONCENTRATION' }
+  | { type: 'UPDATE_PROFILE_SETTINGS'; profileId: string; spellAbility: 'INT' | 'WIS' | 'CHA'; abilityMod: number };
 
 const STORAGE_KEY = 'spellbook-v1';
 
@@ -106,10 +111,56 @@ export function reducer(state: AppState, action: Action): AppState {
       return state;
     }
 
+    case 'CAST_SPELL': {
+      return updateActiveProfile(state, (p) => ({
+        ...p,
+        slotUsage: {
+          ...p.slotUsage,
+          regular: {
+            ...p.slotUsage.regular,
+            [action.level]: (p.slotUsage.regular[action.level] ?? 0) + 1,
+          },
+        },
+        concentration: action.isConcentration
+          ? { spellId: action.spellId, level: action.level }
+          : p.concentration,
+      }));
+    }
+
+    case 'TOGGLE_PREPARED':
+      return updateActiveProfile(state, (p) => ({
+        ...p,
+        prepared: p.prepared.includes(action.spellId)
+          ? p.prepared.filter((id) => id !== action.spellId)
+          : [...p.prepared, action.spellId],
+      }));
+
+    case 'TOGGLE_FAVORITE':
+      return updateActiveProfile(state, (p) => ({
+        ...p,
+        favorites: p.favorites.includes(action.spellId)
+          ? p.favorites.filter((id) => id !== action.spellId)
+          : [...p.favorites, action.spellId],
+      }));
+
+    case 'DROP_CONCENTRATION':
+      return updateActiveProfile(state, (p) => ({ ...p, concentration: null }));
+
+    case 'UPDATE_PROFILE_SETTINGS':
+      return {
+        ...state,
+        profiles: state.profiles.map((p) =>
+          p.id === action.profileId
+            ? { ...p, spellAbility: action.spellAbility, abilityMod: action.abilityMod }
+            : p
+        ),
+      };
+
     case 'LONG_REST':
       return updateActiveProfile(state, (p) => ({
         ...p,
         slotUsage: { regular: {}, pact: 0, arcanum: {} },
+        concentration: null,
       }));
 
     case 'SHORT_REST':
@@ -179,11 +230,25 @@ export function reducer(state: AppState, action: Action): AppState {
   }
 }
 
+function backfillProfile(p: Profile): Profile {
+  return {
+    avatarHue: 12,
+    spellAbility: 'INT',
+    abilityMod: 0,
+    prepared: [],
+    favorites: [],
+    concentration: null,
+    ...p,
+  };
+}
+
 export function useSpellbook(): { state: AppState; dispatch: React.Dispatch<Action> } {
   const [state, dispatch] = useReducer(reducer, initialState, (init) => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : init;
+      if (!saved) return init;
+      const parsed: AppState = JSON.parse(saved);
+      return { ...parsed, profiles: parsed.profiles.map(backfillProfile) };
     } catch {
       return init;
     }

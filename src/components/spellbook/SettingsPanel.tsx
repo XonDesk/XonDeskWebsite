@@ -1,14 +1,36 @@
 import React, { useState, useRef } from 'react';
 import { useApp } from './SpellbookApp';
 import type { ClassEntry, SpellcastingClass } from '../../types/spellbook';
+import { AVATAR_HUES } from './SpellbookApp';
 
 const SPELLCASTING_CLASSES: SpellcastingClass[] = [
   'wizard', 'sorcerer', 'bard', 'cleric', 'druid',
   'paladin', 'ranger', 'warlock', 'eldritch-knight', 'arcane-trickster',
 ];
 
+const sectionHeadingStyle: React.CSSProperties = {
+  fontSize: '0.6875rem',
+  fontWeight: 700,
+  textTransform: 'uppercase',
+  letterSpacing: '0.08em',
+  color: 'var(--sp-label)',
+  marginBottom: '0.5rem',
+  fontFamily: 'Inter, sans-serif',
+};
+
+const selectStyle: React.CSSProperties = {
+  background: 'var(--sp-card)',
+  border: '1px solid var(--sp-border-strong)',
+  borderRadius: '0.5rem',
+  color: 'var(--sp-text)',
+  padding: '0.375rem 0.5rem',
+  fontSize: '0.875rem',
+  fontFamily: 'Inter, sans-serif',
+  width: '100%',
+};
+
 export default function SettingsPanel() {
-  const { state, dispatch, activeProfile, settingsOpen, setSettingsOpen } = useApp();
+  const { state, dispatch, activeProfile, settingsOpen, setSettingsOpen, visualSettings, setTheme, setDensity, setBackground, showToast } = useApp();
   const [newProfileName, setNewProfileName] = useState('');
   const entryKeysRef = useRef<string[]>(
     activeProfile ? activeProfile.classEntries.map((_, i) => `init-${i}`) : []
@@ -19,6 +41,7 @@ export default function SettingsPanel() {
   function handleCreateProfile() {
     const name = newProfileName.trim();
     if (!name) return;
+    const avatarHue = AVATAR_HUES[state.profiles.length % AVATAR_HUES.length];
     dispatch({
       type: 'CREATE_PROFILE',
       profile: {
@@ -27,6 +50,12 @@ export default function SettingsPanel() {
         spellbooks: [],
         activeSpellbookId: '',
         slotUsage: { regular: {}, pact: 0, arcanum: {} },
+        avatarHue,
+        spellAbility: 'INT',
+        abilityMod: 0,
+        prepared: [],
+        favorites: [],
+        concentration: null,
       },
     });
     setNewProfileName('');
@@ -34,124 +63,149 @@ export default function SettingsPanel() {
 
   function handleUpdateClassEntries(entries: ClassEntry[]) {
     if (!activeProfile) return;
-    dispatch({
-      type: 'UPDATE_PROFILE',
-      profileId: activeProfile.id,
-      updates: { classEntries: entries },
-    });
+    dispatch({ type: 'UPDATE_PROFILE', profileId: activeProfile.id, updates: { classEntries: entries } });
   }
 
   function handleAddClass() {
     if (!activeProfile) return;
     entryKeysRef.current = [...entryKeysRef.current, `key-${Date.now()}-${Math.random()}`];
-    handleUpdateClassEntries([
-      ...activeProfile.classEntries,
-      { class: 'wizard', level: 1 },
-    ]);
+    handleUpdateClassEntries([...activeProfile.classEntries, { class: 'wizard', level: 1 }]);
   }
 
   function handleRemoveClass(index: number) {
     if (!activeProfile) return;
     entryKeysRef.current = entryKeysRef.current.filter((_, i) => i !== index);
-    const entries = activeProfile.classEntries.filter((_, i) => i !== index);
-    handleUpdateClassEntries(entries);
+    handleUpdateClassEntries(activeProfile.classEntries.filter((_, i) => i !== index));
   }
 
   function handleChangeClass(index: number, cls: SpellcastingClass) {
     if (!activeProfile) return;
-    const entries = activeProfile.classEntries.map((e, i) =>
-      i === index ? { ...e, class: cls } : e
-    );
-    handleUpdateClassEntries(entries);
+    handleUpdateClassEntries(activeProfile.classEntries.map((e, i) => i === index ? { ...e, class: cls } : e));
   }
 
   function handleChangeLevel(index: number, delta: number) {
     if (!activeProfile) return;
-    const entries = activeProfile.classEntries.map((e, i) => {
-      if (i !== index) return e;
-      const newLevel = Math.max(1, Math.min(20, e.level + delta));
-      return { ...e, level: newLevel };
-    });
-    handleUpdateClassEntries(entries);
+    handleUpdateClassEntries(activeProfile.classEntries.map((e, i) =>
+      i !== index ? e : { ...e, level: Math.max(1, Math.min(20, e.level + delta)) }
+    ));
   }
+
+  function handleExportJSON() {
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'spellbook-export.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Spellbook exported as JSON');
+  }
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block', fontSize: '0.75rem', color: 'var(--sp-label)',
+    marginBottom: '0.25rem', fontFamily: 'Inter, sans-serif',
+  };
 
   return (
     <>
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 z-40"
-        style={{ backgroundColor: 'rgba(0,0,0,0.4)' }}
-        onClick={() => setSettingsOpen(false)}
-        aria-hidden="true"
-      />
+      <div className="fixed inset-0 z-40" style={{ backgroundColor: 'rgba(0,0,0,0.4)' }} onClick={() => setSettingsOpen(false)} aria-hidden="true" />
 
-      {/* Panel */}
       <div
         className="fixed right-0 top-0 bottom-0 w-80 z-50 overflow-y-auto flex flex-col"
-        style={{ backgroundColor: 'var(--sp-cream)', color: 'var(--sp-plum)' }}
+        style={{ backgroundColor: 'var(--sp-bg)', color: 'var(--sp-text)', borderLeft: '1px solid var(--sp-border)' }}
         role="dialog"
         aria-modal="true"
         aria-label="Settings"
       >
         {/* Header */}
-        <div
-          className="flex items-center justify-between px-4 py-3 border-b"
-          style={{ borderColor: 'var(--sp-pink-soft)' }}
-        >
-          <h2 className="font-cinzel text-lg" style={{ color: 'var(--sp-plum)' }}>
-            Settings
-          </h2>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.875rem 1rem', borderBottom: '1px solid var(--sp-border)' }}>
+          <h2 className="font-cormorant" style={{ fontSize: '1.375rem', fontWeight: 600, color: 'var(--sp-text)' }}>Settings</h2>
           <button
+            type="button"
             aria-label="Close"
             onClick={() => setSettingsOpen(false)}
-            className="font-cinzel text-xl leading-none"
-            style={{ color: 'var(--sp-plum)' }}
-          >
-            ×
-          </button>
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--sp-text-2)', fontSize: '1.5rem', lineHeight: 1, padding: '0.25rem' }}
+          >×</button>
         </div>
 
-        <div className="flex-1 px-4 py-4 space-y-6">
+        <div style={{ flex: 1, padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+
+          {/* ── Appearance ── */}
+          <section>
+            <div style={sectionHeadingStyle}>Appearance</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <div>
+                <label style={labelStyle}>Theme</label>
+                <select value={visualSettings.theme} onChange={e => setTheme(e.target.value as 'auto' | 'light' | 'dark')} style={selectStyle}>
+                  <option value="auto">Auto</option>
+                  <option value="light">Light</option>
+                  <option value="dark">Dark</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Density</label>
+                <select value={visualSettings.density} onChange={e => setDensity(e.target.value as 'cozy' | 'compact')} style={selectStyle}>
+                  <option value="cozy">Cozy</option>
+                  <option value="compact">Compact</option>
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Background</label>
+                <select value={visualSettings.background} onChange={e => setBackground(e.target.value as 'clouds' | 'starfield' | 'clean')} style={selectStyle}>
+                  <option value="clouds">Clouds</option>
+                  <option value="starfield">Starfield</option>
+                  <option value="clean">Clean</option>
+                </select>
+              </div>
+            </div>
+          </section>
+
+          {/* ── Spell Ability (active profile) ── */}
+          {activeProfile && (
+            <section>
+              <div style={sectionHeadingStyle}>Spell Ability</div>
+              <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <select
+                  value={activeProfile.spellAbility}
+                  onChange={e => dispatch({ type: 'UPDATE_PROFILE_SETTINGS', profileId: activeProfile.id, spellAbility: e.target.value as 'INT' | 'WIS' | 'CHA', abilityMod: activeProfile.abilityMod })}
+                  style={{ ...selectStyle, width: 'auto' }}
+                >
+                  <option value="INT">INT</option>
+                  <option value="WIS">WIS</option>
+                  <option value="CHA">CHA</option>
+                </select>
+                <label style={{ ...labelStyle, marginBottom: 0, marginLeft: '0.5rem' }}>Modifier</label>
+                <input
+                  type="number"
+                  min={-5} max={10}
+                  value={activeProfile.abilityMod}
+                  onChange={e => dispatch({ type: 'UPDATE_PROFILE_SETTINGS', profileId: activeProfile.id, spellAbility: activeProfile.spellAbility, abilityMod: Number(e.target.value) })}
+                  style={{ ...selectStyle, width: '5rem' }}
+                />
+              </div>
+            </section>
+          )}
 
           {/* ── Profiles ── */}
           <section>
-            <h3 className="font-cinzel text-sm uppercase tracking-widest mb-2" style={{ color: 'var(--sp-pink-hot)' }}>
-              Profiles
-            </h3>
-
-            {state.profiles.length === 0 && (
-              <p className="font-lora text-sm opacity-60">No profiles yet.</p>
-            )}
-
-            <ul className="space-y-1 mb-3">
+            <div style={sectionHeadingStyle}>Profiles</div>
+            {state.profiles.length === 0 && <p style={{ fontSize: '0.875rem', color: 'var(--sp-text-2)', opacity: 0.6 }}>No profiles yet.</p>}
+            <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', marginBottom: '0.75rem' }}>
               {state.profiles.map((profile) => {
                 const isActive = profile.id === state.activeProfileId;
                 return (
-                  <li
-                    key={profile.id}
-                    className="flex items-center justify-between gap-2 rounded px-2 py-1"
-                    style={{
-                      backgroundColor: isActive ? 'var(--sp-pink-soft)' : 'transparent',
-                    }}
-                  >
+                  <li key={profile.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem', borderRadius: '0.5rem', padding: '0.375rem 0.5rem', background: isActive ? 'var(--sp-accent-muted)' : 'transparent' }}>
                     <button
-                      className="font-lora text-sm text-left flex-1"
-                      style={{
-                        color: 'var(--sp-plum)',
-                        fontWeight: isActive ? 700 : 400,
-                      }}
-                      onClick={() =>
-                        dispatch({ type: 'SET_ACTIVE_PROFILE', profileId: profile.id })
-                      }
+                      type="button"
+                      style={{ color: isActive ? 'var(--sp-accent)' : 'var(--sp-text)', fontWeight: isActive ? 600 : 400, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', flex: 1, textAlign: 'left' }}
+                      onClick={() => dispatch({ type: 'SET_ACTIVE_PROFILE', profileId: profile.id })}
                     >
                       {profile.name}
                     </button>
                     <button
-                      className="font-cinzel text-xs px-2 py-0.5 rounded"
-                      style={{ backgroundColor: 'var(--sp-pink-hot)', color: '#fff' }}
-                      onClick={() =>
-                        dispatch({ type: 'DELETE_PROFILE', profileId: profile.id })
-                      }
+                      type="button"
+                      style={{ background: 'var(--sp-accent)', color: '#fff', border: 'none', borderRadius: '0.375rem', padding: '0.125rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer' }}
+                      onClick={() => dispatch({ type: 'DELETE_PROFILE', profileId: profile.id })}
                       aria-label={`Delete profile ${profile.name}`}
                     >
                       Delete
@@ -160,93 +214,47 @@ export default function SettingsPanel() {
                 );
               })}
             </ul>
-
-            {/* Create profile form */}
-            <div className="flex gap-2">
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
               <input
                 type="text"
                 placeholder="New profile name"
                 value={newProfileName}
-                onChange={(e) => setNewProfileName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleCreateProfile()}
-                className="font-lora text-sm flex-1 px-2 py-1 rounded border"
-                style={{ borderColor: 'var(--sp-pink-soft)', backgroundColor: '#fff', color: 'var(--sp-plum)' }}
+                onChange={e => setNewProfileName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleCreateProfile()}
+                style={{ ...selectStyle, flex: 1 }}
                 aria-label="New profile name"
               />
-              <button
-                onClick={handleCreateProfile}
-                className="font-cinzel text-xs px-3 py-1 rounded"
-                style={{ backgroundColor: 'var(--sp-plum)', color: 'var(--sp-cream)' }}
-              >
+              <button type="button" onClick={handleCreateProfile} style={{ background: 'var(--sp-accent)', color: '#fff', border: 'none', borderRadius: '0.5rem', padding: '0 0.75rem', cursor: 'pointer', fontSize: '0.875rem' }}>
                 Create
               </button>
             </div>
           </section>
 
-          {/* ── Class Entries ── */}
+          {/* ── Classes ── */}
           {activeProfile && (
             <section>
-              <h3 className="font-cinzel text-sm uppercase tracking-widest mb-2" style={{ color: 'var(--sp-pink-hot)' }}>
-                Classes
-              </h3>
-
-              <ul className="space-y-2 mb-2">
+              <div style={sectionHeadingStyle}>Classes</div>
+              <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '0.5rem' }}>
                 {activeProfile.classEntries.map((entry, i) => (
-                  <li key={entryKeysRef.current[i] ?? i} className="flex items-center gap-2">
-                    {/* Class dropdown */}
+                  <li key={entryKeysRef.current[i] ?? i} style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
                     <select
                       value={entry.class}
-                      onChange={(e) => handleChangeClass(i, e.target.value as SpellcastingClass)}
-                      className="font-lora text-xs flex-1 px-1 py-0.5 rounded border"
-                      style={{ borderColor: 'var(--sp-pink-soft)', backgroundColor: '#fff', color: 'var(--sp-plum)' }}
+                      onChange={e => handleChangeClass(i, e.target.value as SpellcastingClass)}
+                      style={{ ...selectStyle, flex: 1 }}
                       aria-label={`Class for entry ${i + 1}`}
                     >
-                      {SPELLCASTING_CLASSES.map((cls) => (
-                        <option key={cls} value={cls}>
-                          {cls.charAt(0).toUpperCase() + cls.slice(1).replace('-', ' ')}
-                        </option>
+                      {SPELLCASTING_CLASSES.map(cls => (
+                        <option key={cls} value={cls}>{cls.charAt(0).toUpperCase() + cls.slice(1).replace('-', ' ')}</option>
                       ))}
                     </select>
-
-                    {/* Level stepper */}
-                    <button
-                      onClick={() => handleChangeLevel(i, -1)}
-                      className="font-cinzel text-sm w-6 h-6 rounded flex items-center justify-center"
-                      style={{ backgroundColor: 'var(--sp-pink-soft)', color: 'var(--sp-plum)' }}
-                      aria-label={`Decrease level for entry ${i + 1}`}
-                    >
-                      −
-                    </button>
-                    <span className="font-cinzel text-sm w-6 text-center" style={{ color: 'var(--sp-plum)' }}>
-                      {entry.level}
-                    </span>
-                    <button
-                      onClick={() => handleChangeLevel(i, +1)}
-                      className="font-cinzel text-sm w-6 h-6 rounded flex items-center justify-center"
-                      style={{ backgroundColor: 'var(--sp-pink-soft)', color: 'var(--sp-plum)' }}
-                      aria-label={`Increase level for entry ${i + 1}`}
-                    >
-                      +
-                    </button>
-
-                    {/* Remove */}
-                    <button
-                      onClick={() => handleRemoveClass(i)}
-                      className="font-cinzel text-sm w-6 h-6 rounded flex items-center justify-center"
-                      style={{ backgroundColor: 'var(--sp-pink-hot)', color: '#fff' }}
-                      aria-label={`Remove class entry ${i + 1}`}
-                    >
-                      ×
-                    </button>
+                    <button type="button" onClick={() => handleChangeLevel(i, -1)} style={{ width: 28, height: 28, borderRadius: '0.375rem', border: '1px solid var(--sp-border-strong)', background: 'none', color: 'var(--sp-text)', cursor: 'pointer' }} aria-label={`Decrease level for entry ${i + 1}`}>−</button>
+                    <span style={{ minWidth: '1.5rem', textAlign: 'center', fontSize: '0.875rem', color: 'var(--sp-text)' }}>{entry.level}</span>
+                    <button type="button" onClick={() => handleChangeLevel(i, +1)} style={{ width: 28, height: 28, borderRadius: '0.375rem', border: '1px solid var(--sp-border-strong)', background: 'none', color: 'var(--sp-text)', cursor: 'pointer' }} aria-label={`Increase level for entry ${i + 1}`}>+</button>
+                    <button type="button" onClick={() => handleRemoveClass(i)} style={{ width: 28, height: 28, borderRadius: '0.375rem', background: 'var(--sp-accent)', color: '#fff', border: 'none', cursor: 'pointer' }} aria-label={`Remove class entry ${i + 1}`}>×</button>
                   </li>
                 ))}
               </ul>
-
-              <button
-                onClick={handleAddClass}
-                className="font-cinzel text-xs px-3 py-1 rounded"
-                style={{ backgroundColor: 'var(--sp-plum)', color: 'var(--sp-cream)' }}
-              >
+              <button type="button" onClick={handleAddClass} style={{ background: 'none', border: '1px solid var(--sp-border-strong)', borderRadius: '0.5rem', color: 'var(--sp-label)', padding: '0.375rem 0.75rem', cursor: 'pointer', fontSize: '0.8125rem' }}>
                 Add Class
               </button>
             </section>
@@ -255,43 +263,33 @@ export default function SettingsPanel() {
           {/* ── Spellbooks ── */}
           {activeProfile && (
             <section>
-              <h3 className="font-cinzel text-sm uppercase tracking-widest mb-2" style={{ color: 'var(--sp-pink-hot)' }}>
-                Spellbooks
-              </h3>
-
-              {activeProfile.spellbooks.length === 0 && (
-                <p className="font-lora text-sm opacity-60 mb-2">No spellbooks yet.</p>
-              )}
-
-              <ul className="space-y-1 mb-2">
-                {activeProfile.spellbooks.map((sb) => (
-                  <li key={sb.id} className="flex items-center justify-between gap-2">
-                    <span className="font-lora text-sm flex-1" style={{ color: 'var(--sp-plum)' }}>
-                      {sb.name}
-                    </span>
-                    <button
-                      className="font-cinzel text-xs px-2 py-0.5 rounded"
-                      style={{ backgroundColor: 'var(--sp-pink-hot)', color: '#fff' }}
-                      onClick={() =>
-                        dispatch({ type: 'DELETE_SPELLBOOK', spellbookId: sb.id })
-                      }
-                      aria-label={`Delete spellbook ${sb.name}`}
-                    >
-                      Delete
-                    </button>
+              <div style={sectionHeadingStyle}>Spellbooks</div>
+              {activeProfile.spellbooks.length === 0 && <p style={{ fontSize: '0.875rem', color: 'var(--sp-text-2)', opacity: 0.6, marginBottom: '0.5rem' }}>No spellbooks yet.</p>}
+              <ul style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', marginBottom: '0.5rem' }}>
+                {activeProfile.spellbooks.map(sb => (
+                  <li key={sb.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
+                    <span style={{ fontSize: '0.875rem', color: 'var(--sp-text)', flex: 1 }}>{sb.name}</span>
+                    <button type="button" style={{ background: 'var(--sp-accent)', color: '#fff', border: 'none', borderRadius: '0.375rem', padding: '0.125rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer' }} onClick={() => dispatch({ type: 'DELETE_SPELLBOOK', spellbookId: sb.id })} aria-label={`Delete spellbook ${sb.name}`}>Delete</button>
                   </li>
                 ))}
               </ul>
-
-              <button
-                onClick={() => dispatch({ type: 'CREATE_SPELLBOOK', name: 'New Spellbook' })}
-                className="font-cinzel text-xs px-3 py-1 rounded"
-                style={{ backgroundColor: 'var(--sp-plum)', color: 'var(--sp-cream)' }}
-              >
+              <button type="button" onClick={() => dispatch({ type: 'CREATE_SPELLBOOK', name: 'New Spellbook' })} style={{ background: 'none', border: '1px solid var(--sp-border-strong)', borderRadius: '0.5rem', color: 'var(--sp-label)', padding: '0.375rem 0.75rem', cursor: 'pointer', fontSize: '0.8125rem' }}>
                 New Spellbook
               </button>
             </section>
           )}
+
+          {/* ── Data ── */}
+          <section>
+            <div style={sectionHeadingStyle}>Data</div>
+            <button
+              type="button"
+              onClick={handleExportJSON}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '0.5rem', border: '1px solid var(--sp-border-strong)', background: 'none', color: 'var(--sp-text)', cursor: 'pointer', fontSize: '0.875rem', fontFamily: 'Inter, sans-serif' }}
+            >
+              Export JSON
+            </button>
+          </section>
 
         </div>
       </div>
