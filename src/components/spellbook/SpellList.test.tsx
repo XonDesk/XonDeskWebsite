@@ -100,14 +100,15 @@ it("in 'mine' mode, shows only spells in activeSpellbook.spellIds", () => {
   expect(screen.queryByText('Prestidigitation')).not.toBeInTheDocument();
 });
 
-it("in 'mine' mode, empty spellbook shows 'No spells found'", () => {
+it("in 'mine' mode, empty spellbook shows the styled empty state", () => {
   renderWithContext({
     browseMode: 'mine',
     allSpells,
     activeProfile: wizardWarlockProfile,
     activeSpellbook: { ...spellbook, spellIds: [] },
   });
-  expect(screen.getByText('No spells found')).toBeInTheDocument();
+  expect(screen.getByText('The grimoire is silent')).toBeInTheDocument();
+  expect(screen.getByText('Try a different search or level filter')).toBeInTheDocument();
 });
 
 it("in 'all' mode, defaults to showing spells for profile's classes", () => {

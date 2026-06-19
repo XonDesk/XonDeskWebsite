@@ -177,8 +177,14 @@ export default function SpellList() {
       {/* Spell cards */}
       <div className="flex-1 overflow-y-auto" role="list" aria-label="Spells">
         {visibleSpells.length === 0 && (
-          <div className="p-4 text-sm text-center" style={{ color: 'var(--sp-text-2)', opacity: 0.6 }}>
-            No spells found
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', textAlign: 'center' }}>
+            <div style={{ fontSize: 32, color: 'var(--sp-accent)', lineHeight: 1, marginBottom: '0.5rem' }}>✦</div>
+            <div className="font-italianno" style={{ fontSize: 26, color: 'var(--sp-text)', lineHeight: 1.2 }}>
+              The grimoire is silent
+            </div>
+            <div style={{ fontSize: 12, color: 'var(--sp-text-2)', opacity: 0.7, marginTop: '0.375rem', fontFamily: 'Inter, sans-serif' }}>
+              Try a different search or level filter
+            </div>
           </div>
         )}
         {[...grouped.entries()].map(([groupLabel, spells]) => (
