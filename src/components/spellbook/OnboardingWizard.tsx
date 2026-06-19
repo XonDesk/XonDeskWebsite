@@ -165,6 +165,22 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                 Let's get your spellbook ready.<br />It only takes a moment.
               </p>
             </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem', padding: '0 0.25rem' }}>
+              {[
+                'Name your character',
+                'Choose class & level',
+                'Enter the grimoire',
+              ].map((label, i) => (
+                <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'baseline' }}>
+                  <span className="font-cormorant" style={{ fontSize: '0.8125rem', color: 'var(--sp-accent)', fontWeight: 600, minWidth: '1rem' }}>
+                    {i + 1}.
+                  </span>
+                  <span className="font-cormorant" style={{ fontSize: '0.8125rem', color: 'var(--sp-text-2)' }}>
+                    {label}
+                  </span>
+                </div>
+              ))}
+            </div>
             <button style={btnGradient} onClick={() => setStep(1)}>
               Begin →
             </button>
