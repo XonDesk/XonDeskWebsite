@@ -16,6 +16,14 @@ const SCHOOL_HUES: Record<string, number> = {
   enchantment: 330, illusion: 260, necromancy: 130, transmutation: 50,
 };
 
+function getActionDotColor(castingTime: string): string {
+  const ct = castingTime.toLowerCase();
+  if (ct.includes('bonus')) return '#a855f7';
+  if (ct.includes('reaction')) return '#3bb6d6';
+  if (ct.includes('minute') || ct.includes('hour')) return '#e0a93b';
+  return '#f72585';
+}
+
 function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
@@ -44,10 +52,14 @@ export default function SpellCard({ spell, profileClasses: _profileClasses, isIn
         aria-label={spell.name}
       >
         {/* Action dot */}
-        <div style={{
-          width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
-          background: `oklch(65% 0.22 ${schoolHue})`,
-        }} />
+        <div
+          data-testid="action-dot"
+          data-color={getActionDotColor(spell.castingTime)}
+          style={{
+            width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+            background: getActionDotColor(spell.castingTime),
+          }}
+        />
 
         <div className="flex-1 min-w-0">
           <div className="font-cormorant" style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--sp-text)', lineHeight: 1.3 }}>

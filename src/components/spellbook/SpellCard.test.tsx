@@ -106,3 +106,23 @@ it('dispatches TOGGLE_FAVORITE when star clicked', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Favorite' }));
   expect(dispatch).toHaveBeenCalledWith({ type: 'TOGGLE_FAVORITE', spellId: 'fireball' });
 });
+
+it('uses pink dot for an action-cast spell', () => {
+  const { container } = renderCard(makeSpell({ castingTime: '1 action' }));
+  expect(container.querySelector('[data-testid="action-dot"]')).toHaveAttribute('data-color', '#f72585');
+});
+
+it('uses purple dot for a bonus action spell', () => {
+  const { container } = renderCard(makeSpell({ castingTime: '1 Bonus Action' }));
+  expect(container.querySelector('[data-testid="action-dot"]')).toHaveAttribute('data-color', '#a855f7');
+});
+
+it('uses teal dot for a reaction spell', () => {
+  const { container } = renderCard(makeSpell({ castingTime: '1 Reaction' }));
+  expect(container.querySelector('[data-testid="action-dot"]')).toHaveAttribute('data-color', '#3bb6d6');
+});
+
+it('uses gold dot for a long-cast spell', () => {
+  const { container } = renderCard(makeSpell({ castingTime: '1 Minute' }));
+  expect(container.querySelector('[data-testid="action-dot"]')).toHaveAttribute('data-color', '#e0a93b');
+});
