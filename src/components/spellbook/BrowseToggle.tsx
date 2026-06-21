@@ -3,21 +3,29 @@ import { useApp } from './SpellbookApp';
 export default function BrowseToggle() {
   const { browseMode, setBrowseMode } = useApp();
   return (
-    <div className="flex w-full rounded-full border overflow-hidden text-sm font-cinzel" style={{ borderColor: 'var(--sp-pink-hot)' }} role="group" aria-label="View mode">
-      {(['mine', 'all'] as const).map(mode => (
-        <button
-          key={mode}
-          className="flex-1 py-2 transition-colors"
-          style={{
-            backgroundColor: browseMode === mode ? 'var(--sp-pink-hot)' : 'transparent',
-            color: browseMode === mode ? '#fff' : 'var(--sp-muted)',
-          }}
-          aria-pressed={browseMode === mode}
-          onClick={() => setBrowseMode(mode)}
-        >
-          {mode === 'mine' ? 'My Spellbook' : 'Browse All'}
-        </button>
-      ))}
+    <div style={{ display: 'flex', gap: 8, padding: '10px 14px 0' }} role="group" aria-label="View mode">
+      {([['mine', 'My Spells'], ['all', 'Browse All']] as const).map(([mode, label]) => {
+        const active = browseMode === mode;
+        return (
+          <button
+            key={mode}
+            aria-pressed={active}
+            onClick={() => setBrowseMode(mode)}
+            style={{
+              flex: 1, padding: '9px 12px', borderRadius: 12, cursor: 'pointer',
+              fontFamily: 'Cormorant Garamond, serif', fontWeight: 600, fontSize: 13, letterSpacing: '0.04em',
+              border: active ? 'none' : '1px solid var(--sp-border-strong)',
+              background: active
+                ? 'linear-gradient(135deg, var(--sp-accent), var(--sp-accent-mid))'
+                : 'var(--sp-card)',
+              color: active ? '#fff' : 'var(--sp-text-2)',
+              boxShadow: active ? '0 8px 18px -8px rgba(247,37,133,0.5)' : 'none',
+            }}
+          >
+            {label}
+          </button>
+        );
+      })}
     </div>
   );
 }

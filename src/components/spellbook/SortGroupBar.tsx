@@ -1,4 +1,6 @@
-export type GroupBy = 'level' | 'school';
+import React from 'react';
+
+export type GroupBy = 'none' | 'level' | 'school';
 export type SortBy = 'name' | 'level';
 
 interface SortGroupBarProps {
@@ -12,17 +14,30 @@ interface SortGroupBarProps {
   onCombatToggle: () => void;
 }
 
-const selectStyle: React.CSSProperties = {
-  background: 'var(--sp-card)',
-  border: '1px solid var(--sp-border)',
-  borderRadius: '0.5rem',
-  color: 'var(--sp-text)',
-  padding: '0.25rem 0.5rem',
-  fontSize: '0.8125rem',
-  fontFamily: 'Inter, sans-serif',
-  cursor: 'pointer',
-  outline: 'none',
-};
+function Pill({
+  active, onClick, children,
+}: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        flexShrink: 0,
+        padding: '4px 12px',
+        borderRadius: '999px',
+        cursor: 'pointer',
+        fontFamily: 'Cormorant Garamond, serif',
+        fontSize: '0.8125rem',
+        border: active ? '1px solid var(--sp-accent)' : '1px solid var(--sp-border)',
+        background: active ? 'var(--sp-accent-muted)' : 'transparent',
+        color: active ? 'var(--sp-accent)' : 'var(--sp-label)',
+        fontWeight: active ? 600 : 400,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
 
 export default function SortGroupBar({
   groupBy, sortBy, favoritesActive, combatActive,
@@ -33,63 +48,38 @@ export default function SortGroupBar({
       style={{
         display: 'flex',
         alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.5rem 1rem',
-        borderBottom: '1px solid var(--sp-border)',
-        background: 'transparent',
-        flexWrap: 'wrap',
+        gap: '0.375rem',
+        padding: '0.375rem 14px 0.5rem',
+        overflowX: 'auto',
       }}
     >
-      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--sp-label)' }}>
+      <span
+        style={{
+          flexShrink: 0,
+          fontFamily: 'Cormorant Garamond, serif',
+          fontSize: '0.6875rem',
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+          color: 'var(--sp-label)',
+          paddingRight: '0.125rem',
+        }}
+      >
         Group
-        <select value={groupBy} onChange={e => onGroupChange(e.target.value as GroupBy)} style={selectStyle}>
-          <option value="level">Level</option>
-          <option value="school">School</option>
-        </select>
-      </label>
+      </span>
 
-      <label style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.75rem', color: 'var(--sp-label)' }}>
-        Sort
-        <select value={sortBy} onChange={e => onSortChange(e.target.value as SortBy)} style={selectStyle}>
-          <option value="name">Name</option>
-          <option value="level">Level</option>
-        </select>
-      </label>
+      <Pill active={groupBy === 'none'} onClick={() => onGroupChange('none')}>None</Pill>
+      <Pill active={groupBy === 'level'} onClick={() => onGroupChange('level')}>Level</Pill>
+      <Pill active={groupBy === 'school'} onClick={() => onGroupChange('school')}>School</Pill>
 
-      <div style={{ display: 'flex', gap: '0.375rem', marginLeft: 'auto' }}>
-        <button
-          type="button"
-          onClick={onFavoritesToggle}
-          style={{
-            padding: '0.25rem 0.625rem',
-            borderRadius: '999px',
-            border: favoritesActive ? '1px solid var(--sp-accent)' : '1px solid var(--sp-border)',
-            background: favoritesActive ? 'var(--sp-accent-muted)' : 'transparent',
-            color: favoritesActive ? 'var(--sp-accent)' : 'var(--sp-label)',
-            fontSize: '0.8125rem',
-            cursor: 'pointer',
-            fontWeight: favoritesActive ? 600 : 400,
-          }}
-        >
-          ★ Favorites
-        </button>
-        <button
-          type="button"
-          onClick={onCombatToggle}
-          style={{
-            padding: '0.25rem 0.625rem',
-            borderRadius: '999px',
-            border: combatActive ? '1px solid var(--sp-accent)' : '1px solid var(--sp-border)',
-            background: combatActive ? 'var(--sp-accent-muted)' : 'transparent',
-            color: combatActive ? 'var(--sp-accent)' : 'var(--sp-label)',
-            fontSize: '0.8125rem',
-            cursor: 'pointer',
-            fontWeight: combatActive ? 600 : 400,
-          }}
-        >
-          ⚔ Combat
-        </button>
-      </div>
+      <Pill
+        active={false}
+        onClick={() => onSortChange(sortBy === 'level' ? 'name' : 'level')}
+      >
+        Sort: {sortBy === 'level' ? 'Level' : 'Name'}
+      </Pill>
+
+      <Pill active={favoritesActive} onClick={onFavoritesToggle}>★ Favorites</Pill>
+      <Pill active={combatActive} onClick={onCombatToggle}>✗ Combat</Pill>
     </div>
   );
 }

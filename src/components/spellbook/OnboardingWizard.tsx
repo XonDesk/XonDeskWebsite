@@ -88,7 +88,7 @@ interface OnboardingWizardProps {
 }
 
 export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) {
-  const { dispatch, state } = useApp();
+  const { commands, state } = useApp();
   const [step, setStep] = useState<0 | 1 | 2 | 3>(0);
   const [name, setName] = useState('');
   const [selectedClass, setSelectedClass] = useState<SpellcastingClass>('wizard');
@@ -97,21 +97,19 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   function handleFinish() {
     const avatarHue = AVATAR_HUES[state.profiles.length % AVATAR_HUES.length];
     const spellAbility = ABILITY_BY_CLASS[selectedClass];
-    dispatch({
-      type: 'CREATE_PROFILE',
-      profile: {
-        name: name.trim(),
-        classEntries: [{ class: selectedClass, level }],
-        spellbooks: [],
-        activeSpellbookId: '',
-        slotUsage: { regular: {}, pact: 0, arcanum: {} },
-        avatarHue,
-        spellAbility,
-        abilityMod: 0,
-        prepared: [],
-        favorites: [],
-        concentration: null,
-      },
+    const spellbookId = crypto.randomUUID();
+    commands.createProfile({
+      name: name.trim(),
+      classEntries: [{ class: selectedClass, level }],
+      spellbooks: [{ id: spellbookId, name: `${name.trim()}'s Grimoire`, spellIds: [] }],
+      activeSpellbookId: spellbookId,
+      slotUsage: { regular: {}, pact: 0, arcanum: {} },
+      avatarHue,
+      spellAbility,
+      abilityMod: 0,
+      prepared: [],
+      favorites: [],
+      concentration: null,
     });
     onComplete();
   }
@@ -234,7 +232,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
                     padding: '0.5rem 0.75rem',
                     borderRadius: '0.5rem',
-                    border: selectedClass === cls ? '2px solid var(--sp-accent)' : '1px solid var(--sp-border)',
+                    border: '1px solid var(--sp-border)',
+                    boxShadow: selectedClass === cls ? 'inset 0 0 0 1px var(--sp-accent)' : 'none',
                     background: selectedClass === cls ? 'var(--sp-accent-muted)' : 'var(--sp-card)',
                     color: selectedClass === cls ? 'var(--sp-accent)' : 'var(--sp-text)',
                     cursor: 'pointer',
@@ -259,7 +258,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
                     display: 'flex', alignItems: 'center', gap: '0.5rem',
                     padding: '0.5rem 0.75rem',
                     borderRadius: '0.5rem',
-                    border: selectedClass === cls ? '2px solid var(--sp-accent)' : '1px solid var(--sp-border)',
+                    border: '1px solid var(--sp-border)',
+                    boxShadow: selectedClass === cls ? 'inset 0 0 0 1px var(--sp-accent)' : 'none',
                     background: selectedClass === cls ? 'var(--sp-accent-muted)' : 'var(--sp-card)',
                     color: selectedClass === cls ? 'var(--sp-accent)' : 'var(--sp-text)',
                     cursor: 'pointer',

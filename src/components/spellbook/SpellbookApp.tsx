@@ -5,8 +5,8 @@ import { useVisualSettings } from '../../hooks/useVisualSettings';
 import type { VisualSettings } from '../../hooks/useVisualSettings';
 import spellsData from '../../data/spells-5e2024.json';
 import type { AppState, Profile, Spellbook, Spell, ClassEntry } from '../../types/spellbook';
-import type { Action } from '../../hooks/useSpellbook';
 import type { SlotSummary } from '../../hooks/useSlots';
+import { createCommands, type Commands } from '../../data/spellCommands';
 import ProfileBar from './ProfileBar';
 import SlotTracker from './SlotTracker';
 import BrowseToggle from './BrowseToggle';
@@ -16,7 +16,6 @@ import SettingsPanel from './SettingsPanel';
 import DesktopSidebar from './DesktopSidebar';
 import ConcentrationBanner from './ConcentrationBanner';
 import StatReadout from './StatReadout';
-import SpellbookTabs from './SpellbookTabs';
 import SpellbookBackground from './SpellbookBackground';
 
 const EMPTY_CLASS_ENTRIES: ClassEntry[] = [];
@@ -24,7 +23,7 @@ const AVATAR_HUES = [12, 200, 280, 50, 330, 130, 220, 260];
 
 export interface AppContextValue {
   state: AppState;
-  dispatch: React.Dispatch<Action>;
+  commands: Commands;
   activeProfile: Profile | undefined;
   activeSpellbook: Spellbook | undefined;
   slots: SlotSummary;
@@ -96,8 +95,10 @@ export default function SpellbookApp() {
 
   const showToast = (msg: string) => setToast(msg);
 
+  const commands = useMemo(() => createCommands(dispatch), [dispatch]);
+
   const contextValue: AppContextValue = useMemo(() => ({
-    state, dispatch, activeProfile, activeSpellbook, slots, allSpells,
+    state, commands, activeProfile, activeSpellbook, slots, allSpells,
     selectedSpellId, setSelectedSpellId,
     settingsOpen, setSettingsOpen,
     browseMode, setBrowseMode,
@@ -105,7 +106,7 @@ export default function SpellbookApp() {
     visualSettings, setTheme, setDensity, setBackground,
     toast, showToast,
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }), [state, dispatch, activeProfile, activeSpellbook, slots, selectedSpellId, settingsOpen, browseMode,
+  }), [state, commands, activeProfile, activeSpellbook, slots, selectedSpellId, settingsOpen, browseMode,
        profBonus, saveDC, spellAttack, preparedSet, visualSettings, toast]);
 
   return (
@@ -135,29 +136,21 @@ export default function SpellbookApp() {
           ) : (
             <>
               {activeProfile && (
-                <div
-                  className="lg:hidden"
-                  style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '4px 1rem 8px' }}
-                >
-                  <span className="font-italianno" style={{ fontSize: '1.875rem', color: 'var(--sp-text)', lineHeight: 1 }}>
-                    {activeProfile.name}
-                  </span>
-                  <span className="font-cormorant" style={{ fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--sp-label)' }}>
-                    {activeProfile.classEntries[0]
-                      ? `${activeProfile.classEntries[0].class.charAt(0).toUpperCase()}${activeProfile.classEntries[0].class.slice(1)} · Lvl ${activeProfile.classEntries[0].level}`
-                      : ''}
-                  </span>
+                <div className="lg:hidden" style={{ padding: '0.5rem 1.125rem 0.625rem' }}>
+                  <div className="font-italianno" style={{ fontSize: '2.25rem', color: 'var(--sp-text)', lineHeight: 1 }}>
+                    {activeSpellbook?.name ?? activeProfile.name}
+                  </div>
+                  <div className="font-cormorant" style={{ fontSize: '0.6875rem', textTransform: 'uppercase', letterSpacing: '0.14em', color: 'var(--sp-label)', marginTop: '0.125rem' }}>
+                    {activeSpellbook?.spellIds.length ?? 0} spells inscribed
+                  </div>
                 </div>
               )}
               <ConcentrationBanner />
               <div className="lg:hidden">
                 <StatReadout />
                 <SlotTracker />
-                <SpellbookTabs variant="mobile" />
               </div>
-              <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--sp-border)', backgroundColor: 'var(--sp-bg)' }}>
-                <BrowseToggle />
-              </div>
+              <BrowseToggle />
               <SpellList />
             </>
           )}

@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { AppContext } from './SpellbookApp';
 import type { AppContextValue } from './SpellbookApp';
+import { createCommands } from '../../data/spellCommands';
 import SlotTracker from './SlotTracker';
 
 const wizardSlots = { casterLevel: 5, regularSlots: { 1: 4, 2: 3, 3: 2 }, pactMagic: null, arcanumLevels: [] };
@@ -25,7 +26,7 @@ const baseProfile = {
 function renderWithContext(contextOverrides: Partial<AppContextValue>) {
   const defaultContext: AppContextValue = {
     state: { profiles: [], activeProfileId: '' },
-    dispatch: vi.fn(),
+    commands: createCommands(vi.fn()),
     activeProfile: undefined,
     activeSpellbook: undefined,
     slots: emptySlots,
@@ -88,7 +89,7 @@ it('clicking an empty gem at level 1 (used=0) dispatches USE_SLOT regular', () =
   renderWithContext({
     activeProfile: baseProfile,
     slots: wizardSlots,
-    dispatch,
+    commands: createCommands(dispatch),
   });
   // All gems for level 1 are filled (used=0, so i >= 0 for all). Click first gem.
   const spellSlotBtns = screen.getAllByRole('button', { name: /spell slot/i });
@@ -106,7 +107,7 @@ it('clicking a restore gem (used=2, level 1) dispatches USE_SLOT regular', () =>
       slotUsage: { regular: { 1: 2 }, pact: 0, arcanum: {} },
     },
     slots: wizardSlots,
-    dispatch,
+    commands: createCommands(dispatch),
   });
   // Level 1, used=2: gems 0 and 1 are empty (i < used), gems 2 and 3 filled.
   // Click gem 0 (a "restore" action) → dispatches used=0
@@ -133,9 +134,9 @@ it('Long Rest button dispatches LONG_REST', () => {
   renderWithContext({
     activeProfile: baseProfile,
     slots: wizardSlots,
-    dispatch,
+    commands: createCommands(dispatch),
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Long Rest' }));
+  fireEvent.click(screen.getByRole('button', { name: /long rest/i }));
   expect(dispatch).toHaveBeenCalledWith({ type: 'LONG_REST' });
 });
 
@@ -144,8 +145,8 @@ it('Short Rest button dispatches SHORT_REST', () => {
   renderWithContext({
     activeProfile: baseProfile,
     slots: wizardSlots,
-    dispatch,
+    commands: createCommands(dispatch),
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Short Rest' }));
+  fireEvent.click(screen.getByRole('button', { name: /short/i }));
   expect(dispatch).toHaveBeenCalledWith({ type: 'SHORT_REST' });
 });

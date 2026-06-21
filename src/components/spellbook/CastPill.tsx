@@ -6,37 +6,64 @@ interface CastPillProps {
   spell: Spell;
 }
 
+type SlotOption =
+  | { kind: 'regular'; level: number }
+  | { kind: 'pact'; level: number };
+
 export default function CastPill({ spell }: CastPillProps) {
-  const { activeProfile, slots, dispatch } = useApp();
+  const { activeProfile, slots, commands } = useApp();
   const [open, setOpen] = useState(false);
 
   const slotUsage = activeProfile?.slotUsage?.regular ?? {};
+  const pactUsed = activeProfile?.slotUsage?.pact ?? 0;
   const isCantrip = spell.level === 0;
 
-  const available: number[] = [];
+  const available: SlotOption[] = [];
   if (!isCantrip) {
     for (let lvl = spell.level; lvl <= 9; lvl++) {
       const total = slots.regularSlots[lvl] ?? 0;
       const used = slotUsage[lvl] ?? 0;
-      if (total - used > 0) available.push(lvl);
+      if (total - used > 0) available.push({ kind: 'regular', level: lvl });
+    }
+    if (
+      slots.pactMagic !== null &&
+      slots.pactMagic.slotLevel >= spell.level &&
+      slots.pactMagic.slots > pactUsed
+    ) {
+      available.push({ kind: 'pact', level: slots.pactMagic.slotLevel });
     }
   }
 
   const hasSlots = isCantrip || available.length > 0;
-  const canUpcast = !isCantrip && available.length > 1;
+  const canChoose = !isCantrip && available.length > 1;
 
-  function cast(level: number, e: React.MouseEvent) {
+  function cast(opt: SlotOption, e: React.MouseEvent) {
     e.stopPropagation();
-    dispatch({ type: 'CAST_SPELL', spellId: spell.id, level, isConcentration: spell.concentration });
+    if (opt.kind === 'pact') {
+      commands.castPactSpell(spell.id, opt.level, spell.concentration);
+    } else {
+      commands.castSpell(spell.id, opt.level, spell.concentration);
+    }
     setOpen(false);
   }
 
   function handlePillClick(e: React.MouseEvent) {
     e.stopPropagation();
     if (!hasSlots) return;
-    if (isCantrip) { cast(0, e); return; }
+    if (isCantrip) { commands.castSpell(spell.id, 0, spell.concentration); return; }
     if (available.length === 1) { cast(available[0], e); return; }
     setOpen(o => !o);
+  }
+
+  function labelFor(opt: SlotOption) {
+    if (opt.kind === 'pact') return `Pact Lvl ${opt.level}`;
+    const upcast = opt.level - spell.level;
+    return `Lvl ${opt.level}${upcast > 0 ? ` +${upcast}` : ''}`;
+  }
+
+  function remainingFor(opt: SlotOption) {
+    if (opt.kind === 'pact') return (slots.pactMagic?.slots ?? 0) - pactUsed;
+    return (slots.regularSlots[opt.level] ?? 0) - (slotUsage[opt.level] ?? 0);
   }
 
   return (
@@ -65,7 +92,7 @@ export default function CastPill({ spell }: CastPillProps) {
           flexShrink: 0,
         }}
       >
-        ✦ Cast{canUpcast && <span aria-hidden="true" style={{ fontSize: 9, opacity: 0.85 }}>▾</span>}
+        ✦ Cast{canChoose && <span aria-hidden="true" style={{ fontSize: 9, opacity: 0.85 }}>▾</span>}
       </button>
 
       {open && (
@@ -94,14 +121,14 @@ export default function CastPill({ spell }: CastPillProps) {
             Cast with slot
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-            {available.map(lvl => {
-              const remaining = (slots.regularSlots[lvl] ?? 0) - (slotUsage[lvl] ?? 0);
-              const upcast = lvl - spell.level;
+            {available.map(opt => {
+              const key = `${opt.kind}-${opt.level}`;
+              const isPact = opt.kind === 'pact';
               return (
                 <button
-                  key={lvl}
+                  key={key}
                   type="button"
-                  onClick={e => cast(lvl, e)}
+                  onClick={e => cast(opt, e)}
                   style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -109,22 +136,17 @@ export default function CastPill({ spell }: CastPillProps) {
                     padding: '7px 10px',
                     borderRadius: 9,
                     cursor: 'pointer',
-                    background: lvl === spell.level ? 'var(--sp-accent-muted)' : 'transparent',
-                    border: '1px solid var(--sp-border-strong)',
+                    background: isPact ? 'oklch(42% 0.18 280 / 0.10)' : (opt.level === spell.level ? 'var(--sp-accent-muted)' : 'transparent'),
+                    border: `1px solid ${isPact ? 'oklch(55% 0.22 280 / 0.35)' : 'var(--sp-border-strong)'}`,
                     width: '100%',
                     fontFamily: 'Cormorant Garamond, serif',
                     fontSize: 13,
                     fontWeight: 600,
-                    color: 'var(--sp-text)',
+                    color: isPact ? 'oklch(55% 0.22 280)' : 'var(--sp-text)',
                   }}
                 >
-                  <span>
-                    Lvl {lvl}
-                    {upcast > 0 && (
-                      <span style={{ fontWeight: 400, color: 'var(--sp-text-2)', fontSize: 11 }}> +{upcast}</span>
-                    )}
-                  </span>
-                  <span style={{ fontSize: 11, color: 'var(--sp-text-2)' }}>{remaining} left</span>
+                  <span>{labelFor(opt)}</span>
+                  <span style={{ fontSize: 11, color: 'var(--sp-text-2)' }}>{remainingFor(opt)} left</span>
                 </button>
               );
             })}

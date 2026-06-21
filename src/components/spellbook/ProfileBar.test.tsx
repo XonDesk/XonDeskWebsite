@@ -1,12 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AppContext } from './SpellbookApp';
 import type { AppContextValue } from './SpellbookApp';
+import { createCommands } from '../../data/spellCommands';
 import ProfileBar from './ProfileBar';
 
 function renderWithContext(contextOverrides: Partial<AppContextValue>) {
   const defaultContext: AppContextValue = {
     state: { profiles: [], activeProfileId: '' },
-    dispatch: vi.fn(),
+    commands: createCommands(vi.fn()),
     activeProfile: undefined,
     activeSpellbook: undefined,
     slots: { casterLevel: 0, regularSlots: {}, pactMagic: null, arcanumLevels: [] },
@@ -89,7 +90,7 @@ it('renders spellbook tabs for active profile', () => {
 
 it('clicking a spellbook tab dispatches SET_ACTIVE_SPELLBOOK', () => {
   const dispatch = vi.fn();
-  renderWithContext({ dispatch, activeProfile: profileWithBooks });
+  renderWithContext({ commands: createCommands(dispatch), activeProfile: profileWithBooks });
   fireEvent.click(screen.getByText('Utility'));
   expect(dispatch).toHaveBeenCalledWith({ type: 'SET_ACTIVE_SPELLBOOK', spellbookId: 'sb2' });
 });

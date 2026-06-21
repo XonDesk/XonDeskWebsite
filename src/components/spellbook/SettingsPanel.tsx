@@ -30,7 +30,7 @@ const selectStyle: React.CSSProperties = {
 };
 
 export default function SettingsPanel() {
-  const { state, dispatch, activeProfile, settingsOpen, setSettingsOpen, visualSettings, setTheme, setDensity, setBackground, showToast } = useApp();
+  const { state, commands, activeProfile, settingsOpen, setSettingsOpen, visualSettings, setTheme, setDensity, setBackground, showToast } = useApp();
   const [newProfileName, setNewProfileName] = useState('');
   const entryKeysRef = useRef<string[]>(
     activeProfile ? activeProfile.classEntries.map((_, i) => `init-${i}`) : []
@@ -42,28 +42,25 @@ export default function SettingsPanel() {
     const name = newProfileName.trim();
     if (!name) return;
     const avatarHue = AVATAR_HUES[state.profiles.length % AVATAR_HUES.length];
-    dispatch({
-      type: 'CREATE_PROFILE',
-      profile: {
-        name,
-        classEntries: [],
-        spellbooks: [],
-        activeSpellbookId: '',
-        slotUsage: { regular: {}, pact: 0, arcanum: {} },
-        avatarHue,
-        spellAbility: 'INT',
-        abilityMod: 0,
-        prepared: [],
-        favorites: [],
-        concentration: null,
-      },
+    commands.createProfile({
+      name,
+      classEntries: [],
+      spellbooks: [],
+      activeSpellbookId: '',
+      slotUsage: { regular: {}, pact: 0, arcanum: {} },
+      avatarHue,
+      spellAbility: 'INT',
+      abilityMod: 0,
+      prepared: [],
+      favorites: [],
+      concentration: null,
     });
     setNewProfileName('');
   }
 
   function handleUpdateClassEntries(entries: ClassEntry[]) {
     if (!activeProfile) return;
-    dispatch({ type: 'UPDATE_PROFILE', profileId: activeProfile.id, updates: { classEntries: entries } });
+    commands.updateProfile(activeProfile.id, { classEntries: entries });
   }
 
   function handleAddClass() {
@@ -167,7 +164,7 @@ export default function SettingsPanel() {
               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                 <select
                   value={activeProfile.spellAbility}
-                  onChange={e => dispatch({ type: 'UPDATE_PROFILE_SETTINGS', profileId: activeProfile.id, spellAbility: e.target.value as 'INT' | 'WIS' | 'CHA', abilityMod: activeProfile.abilityMod })}
+                  onChange={e => commands.updateProfileSettings(activeProfile.id, e.target.value as 'INT' | 'WIS' | 'CHA', activeProfile.abilityMod)}
                   style={{ ...selectStyle, width: 'auto' }}
                 >
                   <option value="INT">INT</option>
@@ -179,7 +176,7 @@ export default function SettingsPanel() {
                   type="number"
                   min={-5} max={10}
                   value={activeProfile.abilityMod}
-                  onChange={e => dispatch({ type: 'UPDATE_PROFILE_SETTINGS', profileId: activeProfile.id, spellAbility: activeProfile.spellAbility, abilityMod: Number(e.target.value) })}
+                  onChange={e => commands.updateProfileSettings(activeProfile.id, activeProfile.spellAbility, Number(e.target.value))}
                   style={{ ...selectStyle, width: '5rem' }}
                 />
               </div>
@@ -198,14 +195,14 @@ export default function SettingsPanel() {
                     <button
                       type="button"
                       style={{ color: isActive ? 'var(--sp-accent)' : 'var(--sp-text)', fontWeight: isActive ? 600 : 400, background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.875rem', flex: 1, textAlign: 'left' }}
-                      onClick={() => dispatch({ type: 'SET_ACTIVE_PROFILE', profileId: profile.id })}
+                      onClick={() => commands.setActiveProfile(profile.id)}
                     >
                       {profile.name}
                     </button>
                     <button
                       type="button"
                       style={{ background: 'var(--sp-accent)', color: '#fff', border: 'none', borderRadius: '0.375rem', padding: '0.125rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer' }}
-                      onClick={() => dispatch({ type: 'DELETE_PROFILE', profileId: profile.id })}
+                      onClick={() => commands.deleteProfile(profile.id)}
                       aria-label={`Delete profile ${profile.name}`}
                     >
                       Delete
@@ -269,11 +266,11 @@ export default function SettingsPanel() {
                 {activeProfile.spellbooks.map(sb => (
                   <li key={sb.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.5rem' }}>
                     <span style={{ fontSize: '0.875rem', color: 'var(--sp-text)', flex: 1 }}>{sb.name}</span>
-                    <button type="button" style={{ background: 'var(--sp-accent)', color: '#fff', border: 'none', borderRadius: '0.375rem', padding: '0.125rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer' }} onClick={() => dispatch({ type: 'DELETE_SPELLBOOK', spellbookId: sb.id })} aria-label={`Delete spellbook ${sb.name}`}>Delete</button>
+                    <button type="button" style={{ background: 'var(--sp-accent)', color: '#fff', border: 'none', borderRadius: '0.375rem', padding: '0.125rem 0.5rem', fontSize: '0.75rem', cursor: 'pointer' }} onClick={() => commands.deleteSpellbook(sb.id)} aria-label={`Delete spellbook ${sb.name}`}>Delete</button>
                   </li>
                 ))}
               </ul>
-              <button type="button" onClick={() => dispatch({ type: 'CREATE_SPELLBOOK', name: 'New Spellbook' })} style={{ background: 'none', border: '1px solid var(--sp-border-strong)', borderRadius: '0.5rem', color: 'var(--sp-label)', padding: '0.375rem 0.75rem', cursor: 'pointer', fontSize: '0.8125rem' }}>
+              <button type="button" onClick={() => commands.createSpellbook('New Spellbook')} style={{ background: 'none', border: '1px solid var(--sp-border-strong)', borderRadius: '0.5rem', color: 'var(--sp-label)', padding: '0.375rem 0.75rem', cursor: 'pointer', fontSize: '0.8125rem' }}>
                 New Spellbook
               </button>
             </section>

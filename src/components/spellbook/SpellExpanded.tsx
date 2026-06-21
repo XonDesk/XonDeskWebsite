@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { Spell } from '../../types/spellbook';
 import { useApp } from './SpellbookApp';
 import CastSpellPanel from './CastSpellPanel';
@@ -18,12 +17,14 @@ function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+const KNOWN_CASTER_CLASSES = new Set(['bard', 'sorcerer', 'warlock', 'eldritch-knight', 'arcane-trickster']);
+
 export default function SpellExpanded({ spell, isInSpellbook, browseMode }: SpellExpandedProps) {
-  const { dispatch, activeProfile, preparedSet } = useApp();
-  const [descExpanded, setDescExpanded] = useState(false);
+  const { commands, activeProfile, preparedSet } = useApp();
   const schoolHue = SCHOOL_HUES[spell.school.toLowerCase()] ?? 12;
   const isPrepared = preparedSet.has(spell.id);
   const isCantrip = spell.level === 0;
+  const isKnownCaster = activeProfile?.classEntries.every(e => KNOWN_CASTER_CLASSES.has(e.class)) ?? false;
 
   const stats = [
     { label: 'Casting Time', value: spell.castingTime },
@@ -76,23 +77,13 @@ export default function SpellExpanded({ spell, isInSpellbook, browseMode }: Spel
             fontSize: '0.8125rem',
             color: 'var(--sp-text)',
             lineHeight: '1.6',
-            overflow: descExpanded ? 'visible' : 'hidden',
-            display: descExpanded ? 'block' : '-webkit-box',
-            WebkitLineClamp: descExpanded ? undefined : 4,
-            WebkitBoxOrient: descExpanded ? undefined : 'vertical',
             margin: 0,
             fontFamily: 'Inter, sans-serif',
-          } as React.CSSProperties}
+            whiteSpace: 'pre-wrap',
+          }}
         >
           {spell.description}
         </p>
-        <button
-          type="button"
-          onClick={() => setDescExpanded(p => !p)}
-          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--sp-accent)', fontSize: '0.75rem', marginTop: '0.25rem' }}
-        >
-          {descExpanded ? 'Show less' : 'Show more'}
-        </button>
       </div>
 
       {spell.higherLevel && (
@@ -107,11 +98,11 @@ export default function SpellExpanded({ spell, isInSpellbook, browseMode }: Spel
         <CastSpellPanel spell={spell} />
       )}
 
-      {/* Prepare/Unprepare (My Spells mode, leveled spells only) */}
-      {browseMode === 'mine' && isInSpellbook && !isCantrip && activeProfile && (
+      {/* Prepare/Unprepare (My Spells mode, leveled spells, prepared-list casters only) */}
+      {browseMode === 'mine' && isInSpellbook && !isCantrip && activeProfile && !isKnownCaster && (
         <button
           type="button"
-          onClick={() => dispatch({ type: 'TOGGLE_PREPARED', spellId: spell.id })}
+          onClick={() => commands.togglePrepared(spell.id)}
           style={{
             width: '100%', marginTop: '0.5rem',
             padding: '0.5rem',
@@ -130,7 +121,7 @@ export default function SpellExpanded({ spell, isInSpellbook, browseMode }: Spel
       {/* Add/Remove from spellbook */}
       <button
         type="button"
-        onClick={() => dispatch(isInSpellbook ? { type: 'REMOVE_SPELL', spellId: spell.id } : { type: 'ADD_SPELL', spellId: spell.id })}
+        onClick={() => isInSpellbook ? commands.removeSpell(spell.id) : commands.addSpell(spell.id)}
         style={{
           width: '100%',
           padding: '0.5rem',

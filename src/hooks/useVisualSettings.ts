@@ -46,6 +46,10 @@ export function useVisualSettings(): {
     }
   }, [settings.theme]);
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('compact', settings.density === 'compact');
+  }, [settings.density]);
+
   return {
     settings,
     setTheme: (theme) => setSettings((s) => ({ ...s, theme })),

@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AppContext } from './SpellbookApp';
 import type { AppContextValue } from './SpellbookApp';
+import { createCommands } from '../../data/spellCommands';
 import CastPill from './CastPill';
 import type { Spell } from '../../types/spellbook';
 
@@ -31,7 +32,7 @@ const mockCantrip: Spell = {
 function makeContext(overrides: Partial<AppContextValue> = {}): AppContextValue {
   return {
     state: { profiles: [], activeProfileId: '' },
-    dispatch: mockDispatch,
+    commands: createCommands(mockDispatch),
     activeProfile: {
       id: 'p1', name: 'Lyra', avatarHue: 330,
       classEntries: [{ class: 'wizard' as const, level: 5 }],

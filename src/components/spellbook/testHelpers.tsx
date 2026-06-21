@@ -1,10 +1,11 @@
 import React from 'react';
 import { AppContext } from './SpellbookApp';
 import type { AppContextValue } from './SpellbookApp';
+import { createCommands } from '../../data/spellCommands';
 
 export const DEFAULT_CONTEXT: AppContextValue = {
   state: { profiles: [], activeProfileId: '' },
-  dispatch: vi.fn(),
+  commands: createCommands(vi.fn()),
   activeProfile: undefined,
   activeSpellbook: undefined,
   slots: { casterLevel: 0, regularSlots: {}, pactMagic: null, arcanumLevels: [] },

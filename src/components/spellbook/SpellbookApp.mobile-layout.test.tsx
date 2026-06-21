@@ -44,7 +44,7 @@ vi.mock('../../hooks/useVisualSettings', () => ({
 it('renders at least two spell slot tracker instances (mobile + desktop sidebar) when an active profile exists', () => {
   render(<SpellbookApp />);
   // One in the mobile lg:hidden block, one in DesktopSidebar — jsdom renders both
-  expect(screen.getAllByLabelText('Spell slots').length).toBeGreaterThanOrEqual(2);
+  expect(screen.getAllByLabelText('Arcane Reserves').length).toBeGreaterThanOrEqual(2);
 });
 
 it('renders at least two new spellbook buttons (mobile + desktop sidebar) when an active profile exists', () => {
@@ -52,8 +52,8 @@ it('renders at least two new spellbook buttons (mobile + desktop sidebar) when a
   expect(screen.getAllByLabelText('New spellbook').length).toBeGreaterThanOrEqual(2);
 });
 
-it('renders the identity strip with name and class·level when a profile exists', () => {
+it('renders the identity strip with spellbook name and spell count when a profile exists', () => {
   render(<SpellbookApp />);
-  expect(screen.getAllByText('Lyra').length).toBeGreaterThanOrEqual(1);
-  expect(screen.getByText('Wizard · Lvl 5')).toBeInTheDocument();
+  expect(screen.getAllByText("Lyra's Book").length).toBeGreaterThanOrEqual(1);
+  expect(screen.getAllByText('0 spells inscribed').length).toBeGreaterThanOrEqual(1);
 });

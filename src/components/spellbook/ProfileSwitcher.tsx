@@ -3,11 +3,11 @@ import { useApp } from './SpellbookApp';
 import AvatarCircle from './AvatarCircle';
 
 export default function ProfileSwitcher() {
-  const { state, dispatch, activeProfile } = useApp();
+  const { state, commands, activeProfile } = useApp();
   const [open, setOpen] = useState(false);
 
   function handleSelect(id: string) {
-    dispatch({ type: 'SET_ACTIVE_PROFILE', profileId: id });
+    commands.setActiveProfile(id);
     setOpen(false);
   }
 
@@ -28,17 +28,10 @@ export default function ProfileSwitcher() {
         ) : (
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.3)' }} />
         )}
-        <div style={{ textAlign: 'left' }}>
-          <div className="font-inter" style={{ fontSize: '0.875rem', fontWeight: 600, color: '#fff', lineHeight: 1.2 }}>
-            {activeProfile?.name ?? 'No profile'}
-          </div>
-          {activeProfile && (
-            <div className="font-italianno" style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.75)', lineHeight: 1 }}>
-              grimoire
-            </div>
-          )}
-        </div>
-        <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.75rem', marginLeft: '0.125rem' }}>▾</span>
+        <span className="font-cormorant" style={{ fontSize: '0.8125rem', color: 'var(--sp-text)', fontWeight: 600 }}>
+          {activeProfile?.name.split(' ')[0] ?? 'No profile'}
+        </span>
+        <span style={{ color: 'var(--sp-text-2)', fontSize: '0.6875rem' }}>▾</span>
       </button>
 
       {open && (

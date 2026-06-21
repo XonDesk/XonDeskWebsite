@@ -13,17 +13,30 @@ export default function ProfileBar() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0.5rem 1rem',
-          background: 'linear-gradient(135deg, #f72585 0%, #ff85c2 100%)',
+          padding: '1rem 1.125rem 0.875rem',
+          background: 'var(--sp-header-bg)',
+          borderBottom: '1px solid var(--sp-border)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="M17 13A8 8 0 1 1 7 3a6 6 0 0 0 10 10z" fill="#fff" />
-          </svg>
-          <span className="font-italianno" style={{ fontSize: '1.25rem', color: '#fff', lineHeight: 1 }}>
-            Spellbook
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
+          <div style={{
+            width: 34, height: 34, borderRadius: '50%',
+            background: 'linear-gradient(135deg, #ffd6e7, #ffeaf2)',
+            display: 'grid', placeItems: 'center',
+            boxShadow: '0 4px 12px rgba(247,37,133,0.15), inset 0 0 0 1px rgba(255,255,255,0.8)',
+          }}>
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M17 13A8 8 0 1 1 7 3a6 6 0 0 0 10 10z" fill="var(--sp-accent)" />
+            </svg>
+          </div>
+          <div>
+            <div className="font-cormorant" style={{ fontWeight: 600, fontSize: '1.25rem', lineHeight: 1, color: 'var(--sp-text)' }}>
+              Spellbook
+            </div>
+            <div className="font-italianno" style={{ fontSize: '1.125rem', color: 'var(--sp-accent)', lineHeight: 1, marginTop: 2 }}>
+              grimoire
+            </div>
+          </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
@@ -33,9 +46,12 @@ export default function ProfileBar() {
             aria-label="Settings"
             onClick={() => setSettingsOpen(true)}
             style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: '#fff', fontSize: '1.125rem', lineHeight: 1,
-              padding: '0.25rem',
+              width: 32, height: 32, borderRadius: '50%',
+              border: '1px solid var(--sp-border-strong)',
+              background: 'var(--sp-card)',
+              cursor: 'pointer',
+              color: 'var(--sp-text-2)', fontSize: '1rem', lineHeight: 1,
+              display: 'grid', placeItems: 'center',
             }}
           >
             ⚙

@@ -18,6 +18,7 @@ export type Action =
   | { type: 'UPDATE_SPELLBOOK'; spellbookId: string; updates: Partial<Omit<Spellbook, 'id'>> }
   | { type: 'DELETE_SPELLBOOK'; spellbookId: string }
   | { type: 'CAST_SPELL'; spellId: string; level: number; isConcentration: boolean }
+  | { type: 'CAST_PACT_SPELL'; spellId: string; pactLevel: number; isConcentration: boolean }
   | { type: 'TOGGLE_PREPARED'; spellId: string }
   | { type: 'TOGGLE_FAVORITE'; spellId: string }
   | { type: 'DROP_CONCENTRATION' }
@@ -29,10 +30,6 @@ const initialState: AppState = {
   profiles: [],
   activeProfileId: '',
 };
-
-function getActiveProfile(state: AppState): Profile | undefined {
-  return state.profiles.find((p) => p.id === state.activeProfileId);
-}
 
 function updateActiveProfile(state: AppState, updater: (p: Profile) => Profile): AppState {
   return {
@@ -123,6 +120,16 @@ export function reducer(state: AppState, action: Action): AppState {
         },
         concentration: action.isConcentration
           ? { spellId: action.spellId, level: action.level }
+          : p.concentration,
+      }));
+    }
+
+    case 'CAST_PACT_SPELL': {
+      return updateActiveProfile(state, (p) => ({
+        ...p,
+        slotUsage: { ...p.slotUsage, pact: p.slotUsage.pact + 1 },
+        concentration: action.isConcentration
+          ? { spellId: action.spellId, level: action.pactLevel }
           : p.concentration,
       }));
     }
@@ -232,13 +239,13 @@ export function reducer(state: AppState, action: Action): AppState {
 
 function backfillProfile(p: Profile): Profile {
   return {
-    avatarHue: 12,
-    spellAbility: 'INT',
-    abilityMod: 0,
-    prepared: [],
-    favorites: [],
-    concentration: null,
     ...p,
+    avatarHue: p.avatarHue ?? 12,
+    spellAbility: p.spellAbility ?? 'INT',
+    abilityMod: p.abilityMod ?? 0,
+    prepared: p.prepared ?? [],
+    favorites: p.favorites ?? [],
+    concentration: p.concentration ?? null,
   };
 }
 

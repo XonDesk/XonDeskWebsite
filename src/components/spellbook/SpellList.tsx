@@ -1,23 +1,22 @@
 import { useState, useMemo } from 'react';
 import { useApp } from './SpellbookApp';
 import SpellCard from './SpellCard';
+import SpellExpanded from './SpellExpanded';
 import { LevelPills } from './LevelPills';
 import SortGroupBar from './SortGroupBar';
 import type { GroupBy, SortBy } from './SortGroupBar';
-import type { Spell } from '../../types/spellbook';
+import { filterSpells, groupSpells } from '../../data/spellFilter';
+import { getMaxPrepared } from '../../data/slotTables';
 
 const ALL_CLASSES = ['wizard', 'sorcerer', 'bard', 'cleric', 'druid', 'paladin', 'ranger', 'warlock', 'eldritch-knight', 'arcane-trickster'];
-
-function capitalize(s: string) {
-  return s.charAt(0).toUpperCase() + s.slice(1);
-}
+const KNOWN_CASTER_CLASSES = ['bard', 'sorcerer', 'warlock', 'eldritch-knight', 'arcane-trickster'];
 
 export default function SpellList() {
   const { allSpells, activeProfile, activeSpellbook, browseMode, selectedSpellId, setSelectedSpellId, slots } = useApp();
   const [search, setSearch] = useState('');
   const [classFilter, setClassFilter] = useState('my-classes');
   const [levelFilter, setLevelFilter] = useState('all');
-  const [groupBy, setGroupBy] = useState<GroupBy>('level');
+  const [groupBy, setGroupBy] = useState<GroupBy>('none');
   const [sortBy, setSortBy] = useState<SortBy>('name');
   const [favoritesActive, setFavoritesActive] = useState(false);
   const [combatActive, setCombatActive] = useState(false);
@@ -27,137 +26,121 @@ export default function SpellList() {
     [activeProfile?.classEntries]
   );
 
+  // Known-list casters (Bard/Sorcerer/Warlock/EK/AT) don't prepare spells daily;
+  // every spell they know is always available.
+  const isKnownCasterProfile = useMemo(
+    () => profileClasses.length > 0 && profileClasses.every(c => KNOWN_CASTER_CLASSES.includes(c)),
+    [profileClasses]
+  );
+
   const favorites = activeProfile?.favorites ?? [];
   const prepared = activeProfile?.prepared ?? [];
   const slotUsage = activeProfile?.slotUsage?.regular ?? {};
 
-  const visibleSpells = useMemo(() => {
-    let spells: Spell[];
+  const spellbookIds = useMemo(
+    () => new Set(activeSpellbook?.spellIds ?? []),
+    [activeSpellbook?.spellIds]
+  );
 
-    if (browseMode === 'mine') {
-      const ids = new Set(activeSpellbook?.spellIds ?? []);
-      spells = allSpells.filter(s => ids.has(s.id));
-    } else {
-      if (classFilter === 'my-classes') {
-        spells = profileClasses.length > 0
-          ? allSpells.filter(s => s.classes.some(c => profileClasses.includes(c as never)))
-          : allSpells;
-      } else {
-        spells = allSpells.filter(s => s.classes.includes(classFilter));
-      }
-    }
+  // For known casters, treat the whole spellbook as prepared in the combat filter
+  const effectivePrepared = useMemo(
+    () => isKnownCasterProfile ? [...spellbookIds] : prepared,
+    [isKnownCasterProfile, spellbookIds, prepared]
+  );
 
-    if (search.trim()) {
-      const q = search.trim().toLowerCase();
-      spells = spells.filter(s => s.name.toLowerCase().includes(q));
-    }
+  const maxPrepared = useMemo(
+    () => getMaxPrepared(activeProfile?.classEntries ?? [], activeProfile?.abilityMod ?? 0),
+    [activeProfile?.classEntries, activeProfile?.abilityMod]
+  );
 
-    if (levelFilter !== 'all') {
-      const lvl = levelFilter === 'cantrip' ? 0 : Number(levelFilter);
-      spells = spells.filter(s => s.level === lvl);
-    }
+  const visibleSpells = useMemo(() => filterSpells(allSpells, {
+    browseMode,
+    spellbookIds,
+    profileClasses,
+    favorites,
+    prepared: effectivePrepared,
+    slotUsage,
+    slots,
+    search,
+    classFilter,
+    levelFilter,
+    sortBy,
+    favoritesActive,
+    combatActive,
+  }), [allSpells, browseMode, spellbookIds, profileClasses, favorites, effectivePrepared,
+      slotUsage, slots, search, classFilter, levelFilter, sortBy, favoritesActive, combatActive]);
 
-    // Combat mode: cantrips always pass; leveled spells need a slot at or above base level
-    if (combatActive) {
-      spells = spells.filter(s => {
-        if (s.level === 0) return true;
-        // Check if any slot at/above spell level is available
-        for (let lvl = s.level; lvl <= 9; lvl++) {
-          const total = slots.regularSlots[lvl] ?? 0;
-          const used = slotUsage[lvl] ?? 0;
-          if (total > 0 && used < total) return true;
-        }
-        return false;
-      });
-      // Also filter to prepared in Mine mode
-      if (browseMode === 'mine') {
-        const preparedSet = new Set([...prepared, ...(activeSpellbook?.spellIds ?? []).filter(id => {
-          const sp = allSpells.find(s => s.id === id);
-          return sp && sp.level === 0;
-        })]);
-        spells = spells.filter(s => s.level === 0 || preparedSet.has(s.id));
-      }
-    }
-
-    // Sort
-    spells = [...spells].sort((a, b) => {
-      if (sortBy === 'name') return a.name.localeCompare(b.name);
-      return a.level - b.level || a.name.localeCompare(b.name);
-    });
-
-    // Favorites float to top
-    if (favoritesActive) {
-      const favSet = new Set(favorites);
-      const favs = spells.filter(s => favSet.has(s.id));
-      const rest = spells.filter(s => !favSet.has(s.id));
-      spells = [...favs, ...rest];
-    }
-
-    return spells;
-  }, [allSpells, activeSpellbook, browseMode, profileClasses, search, classFilter, levelFilter,
-      sortBy, favoritesActive, combatActive, favorites, prepared, slotUsage, slots]);
-
-  const spellbookIds = new Set(activeSpellbook?.spellIds ?? []);
-
-  // Group by level or school
-  const grouped = useMemo(() => {
-    if (groupBy === 'level') {
-      const groups = new Map<string, Spell[]>();
-      for (const spell of visibleSpells) {
-        const key = spell.level === 0 ? 'Cantrips' : `Level ${spell.level}`;
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key)!.push(spell);
-      }
-      return groups;
-    } else {
-      const groups = new Map<string, Spell[]>();
-      for (const spell of visibleSpells) {
-        const key = capitalize(spell.school);
-        if (!groups.has(key)) groups.set(key, []);
-        groups.get(key)!.push(spell);
-      }
-      return new Map([...groups.entries()].sort(([a], [b]) => a.localeCompare(b)));
-    }
-  }, [visibleSpells, groupBy]);
+  const grouped = useMemo(
+    () => groupSpells(visibleSpells, groupBy),
+    [visibleSpells, groupBy]
+  );
 
   return (
-    <div
-      className="flex flex-col flex-1 overflow-hidden"
-      style={{
-        margin: '12px 14px 14px',
-        borderRadius: 18,
-        background: 'var(--sp-card)',
-        backdropFilter: 'blur(8px)',
-        border: '1px solid var(--sp-border)',
-        boxShadow: 'var(--sp-list-shadow)',
-      }}
-    >
-      {/* Search + class filter */}
-      <div className="flex gap-2 px-4 py-2 border-b" style={{ borderColor: 'var(--sp-border)' }}>
-        <input
-          type="search"
-          placeholder="Search spells..."
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-          className="flex-1 text-sm px-2 py-1 rounded border"
-          style={{ borderColor: 'var(--sp-border-strong)', color: 'var(--sp-text)', background: 'var(--sp-card)', fontFamily: 'Inter, sans-serif' }}
-          aria-label="Search spells"
-        />
-        {browseMode === 'all' && (
-          <select
-            value={classFilter}
-            onChange={e => setClassFilter(e.target.value)}
-            className="text-xs px-1 rounded border"
-            style={{ borderColor: 'var(--sp-border-strong)', color: 'var(--sp-text)', background: 'var(--sp-card)' }}
-            aria-label="Filter by class"
-          >
-            <option value="my-classes">My Classes</option>
-            {ALL_CLASSES.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        )}
+    <div className="flex flex-col flex-1 overflow-hidden">
+      {/* Search bar — pill above the list container */}
+      <div style={{ padding: '10px 14px 0' }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 8,
+          padding: '9px 12px', borderRadius: 999,
+          background: 'var(--sp-card)',
+          border: '1px solid var(--sp-border-strong)',
+          backdropFilter: 'blur(8px)',
+        }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--sp-text-2)" strokeWidth="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+          </svg>
+          <input
+            type="search"
+            placeholder="Search the grimoire..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            style={{
+              flex: 1, border: 'none', outline: 'none', background: 'transparent',
+              fontFamily: 'Cormorant Garamond, serif', fontSize: 14,
+              color: 'var(--sp-text)',
+            }}
+            aria-label="Search spells"
+          />
+          {browseMode === 'all' && (
+            <select
+              value={classFilter}
+              onChange={e => setClassFilter(e.target.value)}
+              style={{
+                background: 'transparent', border: 'none', outline: 'none',
+                fontSize: 12, color: 'var(--sp-text-2)', cursor: 'pointer',
+                fontFamily: 'Cormorant Garamond, serif',
+              }}
+              aria-label="Filter by class"
+            >
+              <option value="my-classes">My Classes</option>
+              {ALL_CLASSES.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
+
+      <LevelPills value={levelFilter} onChange={setLevelFilter} />
+
+      {browseMode === 'mine' && !isKnownCasterProfile && maxPrepared > 0 && (
+        <div style={{ padding: '0 14px 4px', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: '0.6875rem', color: 'var(--sp-label)', fontFamily: 'Inter, sans-serif', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            Prepared
+          </span>
+          <span style={{
+            fontSize: '0.75rem', fontWeight: 600, fontFamily: 'Cormorant Garamond, serif',
+            color: prepared.length >= maxPrepared ? 'var(--sp-accent)' : 'var(--sp-text)',
+          }}>
+            {prepared.length} / {maxPrepared}
+          </span>
+          {prepared.length >= maxPrepared && (
+            <span style={{ fontSize: '0.625rem', color: 'var(--sp-accent)', fontFamily: 'Inter, sans-serif' }}>
+              — at capacity
+            </span>
+          )}
+        </div>
+      )}
 
       <SortGroupBar
         groupBy={groupBy}
@@ -170,42 +153,51 @@ export default function SpellList() {
         onCombatToggle={() => setCombatActive(a => !a)}
       />
 
-      <div className="px-4 py-2 border-b" style={{ borderColor: 'var(--sp-border)' }}>
-        <LevelPills value={levelFilter} onChange={setLevelFilter} />
-      </div>
-
-      {/* Spell cards */}
-      <div className="flex-1 overflow-y-auto" role="list" aria-label="Spells">
-        {visibleSpells.length === 0 && (
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', textAlign: 'center' }}>
-            <div style={{ fontSize: 32, color: 'var(--sp-accent)', lineHeight: 1, marginBottom: '0.5rem' }}>✦</div>
-            <div className="font-italianno" style={{ fontSize: 26, color: 'var(--sp-text)', lineHeight: 1.2 }}>
-              The grimoire is silent
+      {/* Spell grid */}
+      <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', margin: '4px 14px 14px' }}>
+        <div
+          className="flex-1 overflow-y-auto"
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(var(--sp-grid-min), 1fr))',
+            gap: 'var(--sp-grid-gap)',
+            padding: 4,
+            alignContent: 'start',
+          }}
+          role="list"
+          aria-label="Spells"
+        >
+          {visibleSpells.length === 0 && (
+            <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '3rem 1rem', textAlign: 'center' }}>
+              <div style={{ fontSize: 32, color: 'var(--sp-accent)', lineHeight: 1, marginBottom: '0.5rem' }}>✦</div>
+              <div className="font-italianno" style={{ fontSize: 26, color: 'var(--sp-text)', lineHeight: 1.2 }}>
+                The grimoire is silent
+              </div>
+              <div style={{ fontSize: 12, color: 'var(--sp-text-2)', marginTop: '0.375rem', fontFamily: 'Inter, sans-serif' }}>
+                Try a different search or level filter
+              </div>
             </div>
-            <div style={{ fontSize: 12, color: 'var(--sp-text-2)', opacity: 0.7, marginTop: '0.375rem', fontFamily: 'Inter, sans-serif' }}>
-              Try a different search or level filter
-            </div>
-          </div>
-        )}
-        {[...grouped.entries()].map(([groupLabel, spells]) => (
-          <div key={groupLabel}>
-            {grouped.size > 1 && (
+          )}
+          {[...grouped.entries()].flatMap(([groupLabel, spells]) => [
+            grouped.size > 1 ? (
               <div
+                key={`hdr-${groupLabel}`}
                 className="font-cormorant"
                 style={{
-                  padding: '0.375rem 1rem',
+                  gridColumn: '1 / -1',
+                  padding: '0.25rem 0.5rem',
                   fontSize: '0.8125rem',
                   fontWeight: 600,
                   color: 'var(--sp-label)',
-                  background: 'var(--sp-panel)',
-                  borderBottom: '1px solid var(--sp-border)',
                   letterSpacing: '0.03em',
+                  borderBottom: '1px solid var(--sp-border)',
+                  marginBottom: 2,
                 }}
               >
                 {groupLabel}
               </div>
-            )}
-            {spells.map(spell => (
+            ) : null,
+            ...spells.flatMap(spell => [
               <SpellCard
                 key={spell.id}
                 spell={spell}
@@ -213,10 +205,30 @@ export default function SpellList() {
                 isInSpellbook={spellbookIds.has(spell.id)}
                 isSelected={spell.id === selectedSpellId}
                 onClick={() => setSelectedSpellId(spell.id === selectedSpellId ? null : spell.id)}
-              />
-            ))}
-          </div>
-        ))}
+              />,
+              spell.id === selectedSpellId ? (
+                <div
+                  key={`exp-${spell.id}`}
+                  style={{
+                    gridColumn: '1 / -1',
+                    border: '1.5px solid var(--sp-accent)',
+                    borderRadius: 14,
+                    overflow: 'hidden',
+                    background: 'var(--sp-panel)',
+                    backdropFilter: 'blur(8px)',
+                    boxShadow: '0 0 0 3px var(--sp-accent-muted), 0 8px 24px -8px rgba(247,37,133,0.25)',
+                  }}
+                >
+                  <SpellExpanded
+                    spell={spell}
+                    isInSpellbook={spellbookIds.has(spell.id)}
+                    browseMode={browseMode}
+                  />
+                </div>
+              ) : null,
+            ]),
+          ])}
+        </div>
       </div>
     </div>
   );

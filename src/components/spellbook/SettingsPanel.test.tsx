@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AppContext } from './SpellbookApp';
 import type { AppContextValue } from './SpellbookApp';
+import { createCommands } from '../../data/spellCommands';
 import SettingsPanel from './SettingsPanel';
 import type { Profile, Spellbook } from '../../types/spellbook';
 
@@ -42,7 +43,7 @@ const profile2: Profile = {
 function renderWithContext(overrides: Partial<AppContextValue>) {
   const defaultContext: AppContextValue = {
     state: { profiles: [profile1, profile2], activeProfileId: 'p1' },
-    dispatch: vi.fn(),
+    commands: createCommands(vi.fn()),
     activeProfile: profile1,
     activeSpellbook: spellbook1,
     slots: { casterLevel: 0, regularSlots: {}, pactMagic: null, arcanumLevels: [] },
@@ -94,7 +95,7 @@ it('3. close button calls setSettingsOpen(false)', () => {
 
 it('4. create profile form dispatches CREATE_PROFILE with typed name', () => {
   const dispatch = vi.fn();
-  renderWithContext({ dispatch });
+  renderWithContext({ commands: createCommands(dispatch) });
   const input = screen.getByRole('textbox', { name: /new profile name/i });
   fireEvent.change(input, { target: { value: 'TestHero' } });
   const createBtn = screen.getByRole('button', { name: 'Create' });
@@ -111,7 +112,7 @@ it('4. create profile form dispatches CREATE_PROFILE with typed name', () => {
 
 it('5. clicking a profile name dispatches SET_ACTIVE_PROFILE', () => {
   const dispatch = vi.fn();
-  renderWithContext({ dispatch });
+  renderWithContext({ commands: createCommands(dispatch) });
   // Click on profile2's name button
   const profileBtn = screen.getByRole('button', { name: 'Theron' });
   fireEvent.click(profileBtn);
@@ -120,7 +121,7 @@ it('5. clicking a profile name dispatches SET_ACTIVE_PROFILE', () => {
 
 it('6. delete profile button dispatches DELETE_PROFILE', () => {
   const dispatch = vi.fn();
-  renderWithContext({ dispatch });
+  renderWithContext({ commands: createCommands(dispatch) });
   const deleteBtn = screen.getByRole('button', { name: /delete profile elara/i });
   fireEvent.click(deleteBtn);
   expect(dispatch).toHaveBeenCalledWith({ type: 'DELETE_PROFILE', profileId: 'p1' });
@@ -128,7 +129,7 @@ it('6. delete profile button dispatches DELETE_PROFILE', () => {
 
 it('7. "Add Class" button dispatches UPDATE_PROFILE with new wizard/level-1 entry appended', () => {
   const dispatch = vi.fn();
-  renderWithContext({ dispatch });
+  renderWithContext({ commands: createCommands(dispatch) });
   const addClassBtn = screen.getByRole('button', { name: 'Add Class' });
   fireEvent.click(addClassBtn);
   expect(dispatch).toHaveBeenCalledWith({
@@ -145,7 +146,7 @@ it('7. "Add Class" button dispatches UPDATE_PROFILE with new wizard/level-1 entr
 
 it('8. changing class dropdown dispatches UPDATE_PROFILE with updated class', () => {
   const dispatch = vi.fn();
-  renderWithContext({ dispatch });
+  renderWithContext({ commands: createCommands(dispatch) });
   const select = screen.getByRole('combobox', { name: /class for entry 1/i });
   fireEvent.change(select, { target: { value: 'sorcerer' } });
   expect(dispatch).toHaveBeenCalledWith({
@@ -159,7 +160,7 @@ it('8. changing class dropdown dispatches UPDATE_PROFILE with updated class', ()
 
 it('9. level + button dispatches UPDATE_PROFILE with incremented level', () => {
   const dispatch = vi.fn();
-  renderWithContext({ dispatch });
+  renderWithContext({ commands: createCommands(dispatch) });
   const increaseBtn = screen.getByRole('button', { name: /increase level for entry 1/i });
   fireEvent.click(increaseBtn);
   expect(dispatch).toHaveBeenCalledWith({
@@ -173,7 +174,7 @@ it('9. level + button dispatches UPDATE_PROFILE with incremented level', () => {
 
 it('10. "New Spellbook" button dispatches CREATE_SPELLBOOK', () => {
   const dispatch = vi.fn();
-  renderWithContext({ dispatch });
+  renderWithContext({ commands: createCommands(dispatch) });
   const newSbBtn = screen.getByRole('button', { name: 'New Spellbook' });
   fireEvent.click(newSbBtn);
   expect(dispatch).toHaveBeenCalledWith({ type: 'CREATE_SPELLBOOK', name: 'New Spellbook' });
@@ -181,7 +182,7 @@ it('10. "New Spellbook" button dispatches CREATE_SPELLBOOK', () => {
 
 it('11. delete spellbook button dispatches DELETE_SPELLBOOK', () => {
   const dispatch = vi.fn();
-  renderWithContext({ dispatch });
+  renderWithContext({ commands: createCommands(dispatch) });
   const deleteSbBtn = screen.getByRole('button', { name: /delete spellbook tome of fire/i });
   fireEvent.click(deleteSbBtn);
   expect(dispatch).toHaveBeenCalledWith({ type: 'DELETE_SPELLBOOK', spellbookId: 'sb1' });
@@ -199,7 +200,7 @@ it('12. clicking backdrop calls setSettingsOpen(false)', () => {
 
 it('13. pressing Enter in the profile name input dispatches CREATE_PROFILE', () => {
   const dispatch = vi.fn();
-  renderWithContext({ dispatch });
+  renderWithContext({ commands: createCommands(dispatch) });
   const input = screen.getByRole('textbox', { name: /new profile name/i });
   fireEvent.change(input, { target: { value: 'KeyboardHero' } });
   fireEvent.keyDown(input, { key: 'Enter' });
@@ -213,7 +214,7 @@ it('13. pressing Enter in the profile name input dispatches CREATE_PROFILE', () 
 
 it('14. "−" button decrements level from 5 to 4', () => {
   const dispatch = vi.fn();
-  renderWithContext({ dispatch });
+  renderWithContext({ commands: createCommands(dispatch) });
   const decreaseBtn = screen.getByRole('button', { name: /decrease level for entry 1/i });
   fireEvent.click(decreaseBtn);
   expect(dispatch).toHaveBeenCalledWith({
@@ -231,7 +232,7 @@ it('15. "−" button does not go below level 1', () => {
     ...profile1,
     classEntries: [{ class: 'wizard', level: 1 }],
   };
-  renderWithContext({ dispatch, activeProfile: profileAtLevel1 });
+  renderWithContext({ commands: createCommands(dispatch), activeProfile: profileAtLevel1 });
   const decreaseBtn = screen.getByRole('button', { name: /decrease level for entry 1/i });
   fireEvent.click(decreaseBtn);
   expect(dispatch).toHaveBeenCalledWith({
@@ -249,7 +250,7 @@ it('16. "+" button does not go above level 20', () => {
     ...profile1,
     classEntries: [{ class: 'wizard', level: 20 }],
   };
-  renderWithContext({ dispatch, activeProfile: profileAtLevel20 });
+  renderWithContext({ commands: createCommands(dispatch), activeProfile: profileAtLevel20 });
   const increaseBtn = screen.getByRole('button', { name: /increase level for entry 1/i });
   fireEvent.click(increaseBtn);
   expect(dispatch).toHaveBeenCalledWith({
@@ -263,7 +264,7 @@ it('16. "+" button does not go above level 20', () => {
 
 it('17. Create button with empty input does not dispatch', () => {
   const dispatch = vi.fn();
-  renderWithContext({ dispatch });
+  renderWithContext({ commands: createCommands(dispatch) });
   const createBtn = screen.getByRole('button', { name: 'Create' });
   fireEvent.click(createBtn);
   expect(dispatch).not.toHaveBeenCalled();

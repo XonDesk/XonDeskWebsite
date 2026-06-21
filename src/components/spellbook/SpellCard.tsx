@@ -1,6 +1,5 @@
 import type { Spell } from '../../types/spellbook';
 import { useApp } from './SpellbookApp';
-import SpellExpanded from './SpellExpanded';
 import CastPill from './CastPill';
 
 interface SpellCardProps {
@@ -28,24 +27,36 @@ function capitalize(s: string) {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
-export default function SpellCard({ spell, profileClasses: _profileClasses, isInSpellbook, isSelected, onClick }: SpellCardProps) {
-  const { activeProfile, dispatch, browseMode } = useApp();
+export default function SpellCard({ spell, profileClasses: _profileClasses, isInSpellbook: _isInSpellbook, isSelected, onClick }: SpellCardProps) {
+  const { activeProfile, commands, browseMode } = useApp();
   const schoolHue = SCHOOL_HUES[spell.school.toLowerCase()] ?? 12;
   const isFavorite = activeProfile?.favorites.includes(spell.id) ?? false;
 
   function handleFavoriteToggle(e: React.MouseEvent) {
     e.stopPropagation();
-    dispatch({ type: 'TOGGLE_FAVORITE', spellId: spell.id });
+    commands.toggleFavorite(spell.id);
   }
 
   return (
-    <div>
+    <div
+      role="listitem"
+      style={{
+        border: isSelected ? '1.5px solid var(--sp-accent)' : '1px solid var(--sp-border)',
+        borderRadius: 14,
+        overflow: 'hidden',
+        background: 'var(--sp-card)',
+        backdropFilter: 'blur(8px)',
+        boxShadow: isSelected
+          ? '0 0 0 3px var(--sp-accent-muted), 0 8px 24px -8px rgba(247,37,133,0.25)'
+          : '0 2px 8px -4px rgba(0,0,0,0.18)',
+        transition: 'box-shadow 0.15s, border-color 0.15s',
+      }}
+    >
       <button
-        className="w-full text-left px-4 py-3 border-b flex items-center gap-3 transition-colors"
+        className="w-full text-left flex items-center gap-3 transition-colors"
         style={{
-          borderColor: 'var(--sp-border)',
-          backgroundColor: isSelected ? 'var(--sp-panel)' : 'var(--sp-card)',
-          borderLeft: isSelected ? '3px solid var(--sp-accent)' : '3px solid transparent',
+          padding: 'var(--sp-card-py) var(--sp-card-px)',
+          backgroundColor: isSelected ? 'var(--sp-panel)' : 'transparent',
         }}
         onClick={onClick}
         aria-pressed={isSelected}
@@ -62,15 +73,15 @@ export default function SpellCard({ spell, profileClasses: _profileClasses, isIn
         />
 
         <div className="flex-1 min-w-0">
-          <div className="font-cormorant" style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--sp-text)', lineHeight: 1.3 }}>
+          <div className="font-cormorant" style={{ fontWeight: 600, fontSize: 'var(--sp-name-size)', color: 'var(--sp-text)', lineHeight: 1.3 }}>
             {spell.name}
           </div>
-          <div style={{ fontSize: '0.75rem', color: 'var(--sp-text-2)', marginTop: '0.0625rem' }}>
+          <div style={{ fontSize: 'var(--sp-meta-size)', color: 'var(--sp-text-2)', marginTop: '0.0625rem' }}>
             <span style={{
               display: 'inline-block', padding: '0 0.375rem',
               borderRadius: '999px',
-              background: `oklch(65% 0.12 ${schoolHue} / 0.15)`,
-              color: `oklch(45% 0.18 ${schoolHue})`,
+              background: `oklch(var(--sp-school-l, 42%) 0.10 ${schoolHue} / var(--sp-school-bg-a, 0.14))`,
+              color: `oklch(var(--sp-school-l, 42%) 0.20 ${schoolHue})`,
               fontWeight: 500,
               fontSize: '0.6875rem',
               marginRight: '0.25rem',
@@ -90,7 +101,7 @@ export default function SpellCard({ spell, profileClasses: _profileClasses, isIn
           aria-label={isFavorite ? 'Unfavorite' : 'Favorite'}
           style={{
             background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem',
-            color: isFavorite ? 'var(--sp-accent)' : 'var(--sp-border-strong)',
+            color: isFavorite ? 'var(--sp-accent)' : 'var(--sp-label)',
             fontSize: '1rem', lineHeight: 1, flexShrink: 0,
           }}
         >
@@ -108,7 +119,6 @@ export default function SpellCard({ spell, profileClasses: _profileClasses, isIn
           {isSelected ? '▲' : '▼'}
         </span>
       </button>
-      {isSelected && <SpellExpanded spell={spell} isInSpellbook={isInSpellbook} browseMode={browseMode} />}
     </div>
   );
 }
