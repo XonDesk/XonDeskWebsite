@@ -1,12 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { AppContext } from './SpellbookApp';
 import type { AppContextValue } from './SpellbookApp';
+import { createCommands } from '../../data/spellCommands';
 import ProfileBar from './ProfileBar';
 
 function renderWithContext(contextOverrides: Partial<AppContextValue>) {
   const defaultContext: AppContextValue = {
     state: { profiles: [], activeProfileId: '' },
-    dispatch: vi.fn(),
+    commands: createCommands(vi.fn()),
     activeProfile: undefined,
     activeSpellbook: undefined,
     slots: { casterLevel: 0, regularSlots: {}, pactMagic: null, arcanumLevels: [] },
@@ -17,6 +18,16 @@ function renderWithContext(contextOverrides: Partial<AppContextValue>) {
     setSettingsOpen: vi.fn(),
     browseMode: 'mine',
     setBrowseMode: vi.fn(),
+    profBonus: 3,
+    saveDC: 13,
+    spellAttack: 5,
+    preparedSet: new Set<string>(),
+    visualSettings: { theme: 'auto', density: 'cozy', background: 'clouds' },
+    setTheme: vi.fn(),
+    setDensity: vi.fn(),
+    setBackground: vi.fn(),
+    toast: null,
+    showToast: vi.fn(),
     ...contextOverrides,
   };
   return render(
@@ -40,6 +51,8 @@ it('shows profile name when activeProfile exists', () => {
       spellbooks: [],
       activeSpellbookId: '',
       slotUsage: { regular: {}, pact: 0, arcanum: {} },
+      avatarHue: 12, spellAbility: 'INT', abilityMod: 0,
+      prepared: [], favorites: [], concentration: null,
     },
   });
   expect(screen.getByText(/Ari/)).toBeInTheDocument();
@@ -57,40 +70,27 @@ it('clicking gear calls setSettingsOpen(true)', () => {
   expect(setSettingsOpen).toHaveBeenCalledWith(true);
 });
 
+const profileWithBooks = {
+  id: 'p1', name: 'Ari', classEntries: [],
+  spellbooks: [
+    { id: 'sb1', name: 'Combat', spellIds: [] },
+    { id: 'sb2', name: 'Utility', spellIds: [] },
+  ],
+  activeSpellbookId: 'sb1',
+  slotUsage: { regular: {}, pact: 0, arcanum: {} },
+  avatarHue: 12, spellAbility: 'INT' as const, abilityMod: 0,
+  prepared: [], favorites: [], concentration: null,
+};
+
 it('renders spellbook tabs for active profile', () => {
-  renderWithContext({
-    activeProfile: {
-      id: 'p1',
-      name: 'Ari',
-      classEntries: [],
-      spellbooks: [
-        { id: 'sb1', name: 'Combat', spellIds: [] },
-        { id: 'sb2', name: 'Utility', spellIds: [] },
-      ],
-      activeSpellbookId: 'sb1',
-      slotUsage: { regular: {}, pact: 0, arcanum: {} },
-    },
-  });
+  renderWithContext({ activeProfile: profileWithBooks });
   expect(screen.getByText('Combat')).toBeInTheDocument();
   expect(screen.getByText('Utility')).toBeInTheDocument();
 });
 
 it('clicking a spellbook tab dispatches SET_ACTIVE_SPELLBOOK', () => {
   const dispatch = vi.fn();
-  renderWithContext({
-    dispatch,
-    activeProfile: {
-      id: 'p1',
-      name: 'Ari',
-      classEntries: [],
-      spellbooks: [
-        { id: 'sb1', name: 'Combat', spellIds: [] },
-        { id: 'sb2', name: 'Utility', spellIds: [] },
-      ],
-      activeSpellbookId: 'sb1',
-      slotUsage: { regular: {}, pact: 0, arcanum: {} },
-    },
-  });
+  renderWithContext({ commands: createCommands(dispatch), activeProfile: profileWithBooks });
   fireEvent.click(screen.getByText('Utility'));
   expect(dispatch).toHaveBeenCalledWith({ type: 'SET_ACTIVE_SPELLBOOK', spellbookId: 'sb2' });
 });

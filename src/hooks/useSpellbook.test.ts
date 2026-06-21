@@ -9,6 +9,12 @@ function stateWithProfile(overrides?: Partial<Profile>): AppState {
     spellbooks: [{ id: 'sb1', name: 'Combat', spellIds: ['fireball'] }],
     activeSpellbookId: 'sb1',
     slotUsage: { regular: {}, pact: 0, arcanum: {} },
+    avatarHue: 12,
+    spellAbility: 'INT',
+    abilityMod: 3,
+    prepared: [],
+    favorites: [],
+    concentration: null,
     ...overrides,
   };
   return { profiles: [profile], activeProfileId: 'p1' };
@@ -24,6 +30,12 @@ describe('reducer', () => {
         spellbooks: [],
         activeSpellbookId: '',
         slotUsage: { regular: {}, pact: 0, arcanum: {} },
+        avatarHue: 200,
+        spellAbility: 'WIS',
+        abilityMod: 0,
+        prepared: [],
+        favorites: [],
+        concentration: null,
       };
       const state: AppState = {
         profiles: [
@@ -34,6 +46,12 @@ describe('reducer', () => {
             spellbooks: [],
             activeSpellbookId: '',
             slotUsage: { regular: {}, pact: 0, arcanum: {} },
+            avatarHue: 12,
+            spellAbility: 'INT',
+            abilityMod: 0,
+            prepared: [],
+            favorites: [],
+            concentration: null,
           },
           profile2,
         ],
@@ -61,6 +79,12 @@ describe('reducer', () => {
           spellbooks: [],
           activeSpellbookId: '',
           slotUsage: { regular: {}, pact: 0, arcanum: {} },
+          avatarHue: 12,
+          spellAbility: 'WIS',
+          abilityMod: 2,
+          prepared: [],
+          favorites: [],
+          concentration: null,
         },
       });
       expect(next.profiles).toHaveLength(1);
@@ -80,6 +104,12 @@ describe('reducer', () => {
         spellbooks: [],
         activeSpellbookId: '',
         slotUsage: { regular: {}, pact: 0, arcanum: {} },
+        avatarHue: 200,
+        spellAbility: 'WIS',
+        abilityMod: 0,
+        prepared: [],
+        favorites: [],
+        concentration: null,
       };
       const state: AppState = {
         profiles: [
@@ -90,6 +120,12 @@ describe('reducer', () => {
             spellbooks: [],
             activeSpellbookId: '',
             slotUsage: { regular: {}, pact: 0, arcanum: {} },
+            avatarHue: 12,
+            spellAbility: 'INT',
+            abilityMod: 0,
+            prepared: [],
+            favorites: [],
+            concentration: null,
           },
           profile2,
         ],
@@ -275,6 +311,87 @@ describe('reducer', () => {
         updates: { name: 'Updated Name' },
       });
       expect(next.profiles[0].name).toBe('Updated Name');
+    });
+  });
+
+  describe('TOGGLE_PREPARED', () => {
+    it('adds spellId to prepared when not present', () => {
+      const state = stateWithProfile({ prepared: [] });
+      const next = reducer(state, { type: 'TOGGLE_PREPARED', spellId: 'fireball' });
+      expect(next.profiles[0].prepared).toContain('fireball');
+    });
+
+    it('removes spellId from prepared when already present', () => {
+      const state = stateWithProfile({ prepared: ['fireball'] });
+      const next = reducer(state, { type: 'TOGGLE_PREPARED', spellId: 'fireball' });
+      expect(next.profiles[0].prepared).not.toContain('fireball');
+    });
+  });
+
+  describe('TOGGLE_FAVORITE', () => {
+    it('adds spellId to favorites when not present', () => {
+      const state = stateWithProfile({ favorites: [] });
+      const next = reducer(state, { type: 'TOGGLE_FAVORITE', spellId: 'fireball' });
+      expect(next.profiles[0].favorites).toContain('fireball');
+    });
+
+    it('removes spellId from favorites when already present', () => {
+      const state = stateWithProfile({ favorites: ['fireball'] });
+      const next = reducer(state, { type: 'TOGGLE_FAVORITE', spellId: 'fireball' });
+      expect(next.profiles[0].favorites).not.toContain('fireball');
+    });
+  });
+
+  describe('CAST_SPELL', () => {
+    it('increments regular slot usage for the given level', () => {
+      const state = stateWithProfile({ slotUsage: { regular: { 3: 1 }, pact: 0, arcanum: {} } });
+      const next = reducer(state, { type: 'CAST_SPELL', spellId: 'fireball', level: 3, isConcentration: false });
+      expect(next.profiles[0].slotUsage.regular[3]).toBe(2);
+    });
+
+    it('sets concentration when isConcentration is true', () => {
+      const state = stateWithProfile();
+      const next = reducer(state, { type: 'CAST_SPELL', spellId: 'hold-person', level: 2, isConcentration: true });
+      expect(next.profiles[0].concentration).toEqual({ spellId: 'hold-person', level: 2 });
+    });
+
+    it('does not set concentration when isConcentration is false', () => {
+      const state = stateWithProfile({ concentration: null });
+      const next = reducer(state, { type: 'CAST_SPELL', spellId: 'fireball', level: 3, isConcentration: false });
+      expect(next.profiles[0].concentration).toBeNull();
+    });
+  });
+
+  describe('DROP_CONCENTRATION', () => {
+    it('sets concentration to null', () => {
+      const state = stateWithProfile({ concentration: { spellId: 'hold-person', level: 2 } });
+      const next = reducer(state, { type: 'DROP_CONCENTRATION' });
+      expect(next.profiles[0].concentration).toBeNull();
+    });
+  });
+
+  describe('LONG_REST clears concentration', () => {
+    it('also clears concentration', () => {
+      const state = stateWithProfile({
+        slotUsage: { regular: { 3: 1 }, pact: 0, arcanum: {} },
+        concentration: { spellId: 'hold-person', level: 2 },
+      });
+      const next = reducer(state, { type: 'LONG_REST' });
+      expect(next.profiles[0].concentration).toBeNull();
+    });
+  });
+
+  describe('UPDATE_PROFILE_SETTINGS', () => {
+    it('updates spellAbility and abilityMod for the given profileId', () => {
+      const state = stateWithProfile({ spellAbility: 'INT', abilityMod: 3 });
+      const next = reducer(state, {
+        type: 'UPDATE_PROFILE_SETTINGS',
+        profileId: 'p1',
+        spellAbility: 'CHA',
+        abilityMod: 4,
+      });
+      expect(next.profiles[0].spellAbility).toBe('CHA');
+      expect(next.profiles[0].abilityMod).toBe(4);
     });
   });
 });

@@ -1,15 +1,30 @@
-import { useState } from 'react';
 import type { Spell } from '../../types/spellbook';
 import { useApp } from './SpellbookApp';
+import CastSpellPanel from './CastSpellPanel';
 
 interface SpellExpandedProps {
   spell: Spell;
   isInSpellbook: boolean;
+  browseMode: 'mine' | 'all';
 }
 
-export default function SpellExpanded({ spell, isInSpellbook }: SpellExpandedProps) {
-  const { dispatch } = useApp();
-  const [descExpanded, setDescExpanded] = useState(false);
+const SCHOOL_HUES: Record<string, number> = {
+  evocation: 12, abjuration: 220, conjuration: 280, divination: 200,
+  enchantment: 330, illusion: 260, necromancy: 130, transmutation: 50,
+};
+
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+const KNOWN_CASTER_CLASSES = new Set(['bard', 'sorcerer', 'warlock', 'eldritch-knight', 'arcane-trickster']);
+
+export default function SpellExpanded({ spell, isInSpellbook, browseMode }: SpellExpandedProps) {
+  const { commands, activeProfile, preparedSet } = useApp();
+  const schoolHue = SCHOOL_HUES[spell.school.toLowerCase()] ?? 12;
+  const isPrepared = preparedSet.has(spell.id);
+  const isCantrip = spell.level === 0;
+  const isKnownCaster = activeProfile?.classEntries.every(e => KNOWN_CASTER_CLASSES.has(e.class)) ?? false;
 
   const stats = [
     { label: 'Casting Time', value: spell.castingTime },
@@ -21,80 +36,107 @@ export default function SpellExpanded({ spell, isInSpellbook }: SpellExpandedPro
   return (
     <div
       style={{
-        backgroundColor: 'var(--sp-card)',
-        borderTop: '1px solid var(--sp-pink-soft)',
-        borderBottom: '1px solid var(--sp-pink-soft)',
+        backgroundColor: 'var(--sp-panel)',
+        borderTop: '1px solid var(--sp-border)',
+        borderBottom: '1px solid var(--sp-border)',
+        padding: '0.875rem 1rem',
       }}
-      className="px-4 py-3"
     >
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
+      {/* School chip */}
+      <div style={{ marginBottom: '0.625rem' }}>
+        <span style={{
+          display: 'inline-block', padding: '0.1875rem 0.625rem',
+          borderRadius: '999px',
+          background: `oklch(65% 0.12 ${schoolHue} / 0.18)`,
+          color: `oklch(40% 0.2 ${schoolHue})`,
+          fontSize: '0.75rem', fontWeight: 600,
+        }}>
+          {capitalize(spell.school)}
+          {spell.level > 0 && ` · Level ${spell.level}`}
+          {spell.concentration && ' · Concentration'}
+          {spell.ritual && ' · Ritual'}
+        </span>
+      </div>
+
+      {/* Stats grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginBottom: '0.625rem' }}>
         {stats.map(({ label, value }) => (
           <div key={label}>
-            <div style={{ fontSize: '10px', color: 'var(--sp-muted)', fontFamily: 'Cinzel, serif', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div style={{ fontSize: '0.625rem', color: 'var(--sp-label)', textTransform: 'uppercase', letterSpacing: '0.05em', fontFamily: 'Inter, sans-serif' }}>
               {label}
             </div>
-            <div style={{ fontSize: '13px', color: 'var(--sp-plum)' }}>{value}</div>
+            <div className="font-cormorant" style={{ fontSize: '0.9375rem', color: 'var(--sp-text)' }}>{value}</div>
           </div>
         ))}
       </div>
 
-      {(spell.concentration || spell.ritual) && (
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
-          {spell.concentration && (
-            <span style={{ backgroundColor: 'var(--sp-badge-bg)', color: 'var(--sp-pink-hot)', fontSize: '11px', padding: '2px 8px', borderRadius: '9999px', fontWeight: 600 }}>
-              Concentration
-            </span>
-          )}
-          {spell.ritual && (
-            <span style={{ backgroundColor: 'var(--sp-badge-bg)', color: 'var(--sp-pink-hot)', fontSize: '11px', padding: '2px 8px', borderRadius: '9999px', fontWeight: 600 }}>
-              Ritual
-            </span>
-          )}
-        </div>
-      )}
-
-      <div style={{ marginBottom: '10px' }}>
-        {descExpanded ? (
-          <p style={{ fontSize: '13px', color: 'var(--sp-plum)', lineHeight: '1.6', margin: 0 }}>
-            {spell.description}
-          </p>
-        ) : (
-          <p style={{ fontSize: '13px', color: 'var(--sp-plum)', lineHeight: '1.6', overflow: 'hidden',
-            display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', margin: 0 } as React.CSSProperties}>
-            {spell.description}
-          </p>
-        )}
-        <button
-          onClick={() => setDescExpanded(p => !p)}
-          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--sp-pink-hot)', fontFamily: 'Cinzel, serif', fontSize: '11px', marginTop: '4px' }}
+      {/* Description */}
+      <div style={{ marginBottom: '0.625rem' }}>
+        <p
+          style={{
+            fontSize: '0.8125rem',
+            color: 'var(--sp-text)',
+            lineHeight: '1.6',
+            margin: 0,
+            fontFamily: 'Inter, sans-serif',
+            whiteSpace: 'pre-wrap',
+          }}
         >
-          {descExpanded ? 'Show less' : 'Show more'}
-        </button>
+          {spell.description}
+        </p>
       </div>
 
       {spell.higherLevel && (
-        <p style={{ fontSize: '13px', color: 'var(--sp-muted)', fontStyle: 'italic', marginBottom: '12px' }}>
+        <p style={{ fontSize: '0.8125rem', color: 'var(--sp-text-2)', fontStyle: 'italic', marginBottom: '0.75rem' }}>
           <span style={{ fontWeight: 600, fontStyle: 'normal' }}>At Higher Levels: </span>
           {spell.higherLevel}
         </p>
       )}
 
+      {/* Cast panel (always available when in My Spells mode or when profile exists) */}
+      {activeProfile && isInSpellbook && (
+        <CastSpellPanel spell={spell} />
+      )}
+
+      {/* Prepare/Unprepare (My Spells mode, leveled spells, prepared-list casters only) */}
+      {browseMode === 'mine' && isInSpellbook && !isCantrip && activeProfile && !isKnownCaster && (
+        <button
+          type="button"
+          onClick={() => commands.togglePrepared(spell.id)}
+          style={{
+            width: '100%', marginTop: '0.5rem',
+            padding: '0.5rem',
+            borderRadius: '0.5rem',
+            fontSize: '0.8125rem', fontWeight: 500,
+            cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            ...(isPrepared
+              ? { background: 'transparent', border: '1px solid var(--sp-border-strong)', color: 'var(--sp-text-2)' }
+              : { background: 'var(--sp-accent-muted)', border: '1px solid var(--sp-accent)', color: 'var(--sp-accent)' }),
+          }}
+        >
+          {isPrepared ? '✓ Prepared — Unprepare' : 'Prepare Spell'}
+        </button>
+      )}
+
+      {/* Add/Remove from spellbook */}
       <button
-        onClick={() => dispatch(isInSpellbook ? { type: 'REMOVE_SPELL', spellId: spell.id } : { type: 'ADD_SPELL', spellId: spell.id })}
+        type="button"
+        onClick={() => isInSpellbook ? commands.removeSpell(spell.id) : commands.addSpell(spell.id)}
         style={{
           width: '100%',
-          padding: '10px',
-          borderRadius: '8px',
-          fontFamily: 'Cinzel, serif',
-          fontWeight: 700,
-          fontSize: '13px',
+          padding: '0.5rem',
+          marginTop: '0.5rem',
+          borderRadius: '0.5rem',
+          fontWeight: 600,
+          fontSize: '0.8125rem',
           cursor: 'pointer',
+          fontFamily: 'Inter, sans-serif',
           ...(isInSpellbook
-            ? { background: 'transparent', border: '2px solid #f72585', color: '#f72585' }
+            ? { background: 'transparent', border: '1px solid var(--sp-accent)', color: 'var(--sp-accent)' }
             : { background: 'linear-gradient(135deg, #f72585, #ff85c2)', border: 'none', color: '#fff' }),
         }}
       >
-        {isInSpellbook ? 'Remove from Spellbook' : 'Add to Spellbook'}
+        {isInSpellbook ? 'Remove from Spellbook' : '+ Add to Spellbook'}
       </button>
     </div>
   );

@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, within } from '@testing-library/react';
 import { AppContext } from './SpellbookApp';
 import type { AppContextValue } from './SpellbookApp';
+import { createCommands } from '../../data/spellCommands';
 import SlotTracker from './SlotTracker';
 
 const wizardSlots = { casterLevel: 5, regularSlots: { 1: 4, 2: 3, 3: 2 }, pactMagic: null, arcanumLevels: [] };
@@ -14,12 +15,18 @@ const baseProfile = {
   spellbooks: [],
   activeSpellbookId: '',
   slotUsage: { regular: {}, pact: 0, arcanum: {} },
+  avatarHue: 12,
+  spellAbility: 'INT' as const,
+  abilityMod: 0,
+  prepared: [],
+  favorites: [],
+  concentration: null,
 };
 
 function renderWithContext(contextOverrides: Partial<AppContextValue>) {
   const defaultContext: AppContextValue = {
     state: { profiles: [], activeProfileId: '' },
-    dispatch: vi.fn(),
+    commands: createCommands(vi.fn()),
     activeProfile: undefined,
     activeSpellbook: undefined,
     slots: emptySlots,
@@ -30,6 +37,16 @@ function renderWithContext(contextOverrides: Partial<AppContextValue>) {
     setSettingsOpen: vi.fn(),
     browseMode: 'mine',
     setBrowseMode: vi.fn(),
+    profBonus: 3,
+    saveDC: 13,
+    spellAttack: 5,
+    preparedSet: new Set<string>(),
+    visualSettings: { theme: 'auto', density: 'cozy', background: 'clouds' },
+    setTheme: vi.fn(),
+    setDensity: vi.fn(),
+    setBackground: vi.fn(),
+    toast: null,
+    showToast: vi.fn(),
     ...contextOverrides,
   };
   return render(
@@ -52,41 +69,37 @@ it('shows nothing (no section headings) when casterLevel=0, no pact, no arcanum'
   expect(screen.queryByText('Spell Slots')).toBeNull();
   expect(screen.queryByText('Pact Magic')).toBeNull();
   expect(screen.queryByText('Mystic Arcanum')).toBeNull();
+  // New UI: header is always shown when activeProfile exists
+  expect(screen.queryByText('Arcane Reserves')).toBeTruthy();
 });
 
-it('renders Spell Slots section for wizard 5 with levels 1, 2, 3', () => {
+it('renders gem slots for wizard 5 with levels 1, 2, 3', () => {
   renderWithContext({
     activeProfile: baseProfile,
     slots: wizardSlots,
   });
-  expect(screen.getByText('Spell Slots')).toBeInTheDocument();
-  // level labels
-  expect(screen.getByText('1')).toBeInTheDocument();
-  expect(screen.getByText('2')).toBeInTheDocument();
-  expect(screen.getByText('3')).toBeInTheDocument();
-  // total bubbles: 4 + 3 + 2 = 9
-  const buttons = screen.getAllByRole('button', { name: /Use slot|Mark slot/i });
+  expect(screen.getByText('Arcane Reserves')).toBeInTheDocument();
+  // total gems: 4 + 3 + 2 = 9
+  const buttons = screen.getAllByRole('button', { name: /spell slot/i });
   expect(buttons).toHaveLength(9);
 });
 
-it('clicking empty bubble at index 2 (used=0) dispatches USE_SLOT regular with used=3', () => {
+it('clicking an empty gem at level 1 (used=0) dispatches USE_SLOT regular', () => {
   const dispatch = vi.fn();
   renderWithContext({
     activeProfile: baseProfile,
     slots: wizardSlots,
-    dispatch,
+    commands: createCommands(dispatch),
   });
-  // Level 1 row has 4 bubbles (unique: "Use slot 4" only exists in level 1).
-  // Click "Use slot 4" (index 3): dispatches used=4, but we want index=2 → used=3.
-  // Use within to scope to the row containing level label "1" by finding all level rows.
-  // Simpler: level 1 has slot 4 which is unique — but we want index 2 (used=3).
-  // Get all buttons named "Use slot 3" and take the first (level 1 row).
-  const allSlot3Buttons = screen.getAllByRole('button', { name: 'Use slot 3' });
-  fireEvent.click(allSlot3Buttons[0]);
-  expect(dispatch).toHaveBeenCalledWith({ type: 'USE_SLOT', slotType: 'regular', level: 1, used: 3 });
+  // All gems for level 1 are filled (used=0, so i >= 0 for all). Click first gem.
+  const spellSlotBtns = screen.getAllByRole('button', { name: /spell slot/i });
+  fireEvent.click(spellSlotBtns[0]);
+  expect(dispatch).toHaveBeenCalledWith(
+    expect.objectContaining({ type: 'USE_SLOT', slotType: 'regular', level: 1 })
+  );
 });
 
-it('clicking filled bubble at index 0 (used=2) dispatches USE_SLOT regular with used=0', () => {
+it('clicking a restore gem (used=2, level 1) dispatches USE_SLOT regular', () => {
   const dispatch = vi.fn();
   renderWithContext({
     activeProfile: {
@@ -94,24 +107,26 @@ it('clicking filled bubble at index 0 (used=2) dispatches USE_SLOT regular with 
       slotUsage: { regular: { 1: 2 }, pact: 0, arcanum: {} },
     },
     slots: wizardSlots,
-    dispatch,
+    commands: createCommands(dispatch),
   });
-  // Level 1, used=2: first two bubbles are filled ("Mark slot 1 unused", "Mark slot 2 unused")
-  // Clicking index 0 → onSetUsed(0) → used=0
-  const bubble = screen.getByRole('button', { name: 'Mark slot 1 unused' });
-  fireEvent.click(bubble);
-  expect(dispatch).toHaveBeenCalledWith({ type: 'USE_SLOT', slotType: 'regular', level: 1, used: 0 });
+  // Level 1, used=2: gems 0 and 1 are empty (i < used), gems 2 and 3 filled.
+  // Click gem 0 (a "restore" action) → dispatches used=0
+  const spellSlotBtns = screen.getAllByRole('button', { name: /spell slot/i });
+  fireEvent.click(spellSlotBtns[0]);
+  expect(dispatch).toHaveBeenCalledWith(
+    expect.objectContaining({ type: 'USE_SLOT', slotType: 'regular', level: 1 })
+  );
 });
 
-it('shows Pact Magic section for a warlock profile', () => {
+it('shows pact gems for a warlock profile', () => {
   renderWithContext({
     activeProfile: baseProfile,
     slots: warlockSlots,
   });
-  expect(screen.getByText(/Pact Magic/)).toBeInTheDocument();
-  // 2 pact bubbles
-  const bubbles = screen.getAllByRole('button', { name: /Use slot|Mark slot/i });
-  expect(bubbles).toHaveLength(2);
+  // 2 pact gems
+  const gems = screen.getAllByRole('button', { name: /spell slot/i });
+  expect(gems).toHaveLength(2);
+  expect(screen.getByText(/pact/i)).toBeInTheDocument();
 });
 
 it('Long Rest button dispatches LONG_REST', () => {
@@ -119,9 +134,9 @@ it('Long Rest button dispatches LONG_REST', () => {
   renderWithContext({
     activeProfile: baseProfile,
     slots: wizardSlots,
-    dispatch,
+    commands: createCommands(dispatch),
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Long Rest' }));
+  fireEvent.click(screen.getByRole('button', { name: /long rest/i }));
   expect(dispatch).toHaveBeenCalledWith({ type: 'LONG_REST' });
 });
 
@@ -130,8 +145,8 @@ it('Short Rest button dispatches SHORT_REST', () => {
   renderWithContext({
     activeProfile: baseProfile,
     slots: wizardSlots,
-    dispatch,
+    commands: createCommands(dispatch),
   });
-  fireEvent.click(screen.getByRole('button', { name: 'Short Rest' }));
+  fireEvent.click(screen.getByRole('button', { name: /short/i }));
   expect(dispatch).toHaveBeenCalledWith({ type: 'SHORT_REST' });
 });

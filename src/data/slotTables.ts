@@ -104,3 +104,25 @@ export function getArcanumLevels(warlockLevel: number): number[] {
     .filter(t => warlockLevel >= t.warlockLevel)
     .map(t => t.spellLevel);
 }
+
+const PREPARED_FORMULA: Partial<Record<SpellcastingClass, (lvl: number) => number>> = {
+  wizard:  lvl => lvl,
+  cleric:  lvl => lvl,
+  druid:   lvl => lvl,
+  paladin: lvl => Math.floor(lvl / 2),
+  ranger:  lvl => Math.floor(lvl / 2),
+};
+
+/**
+ * Max prepared spells for prepared-list casters (Wizard/Cleric/Druid/Paladin/Ranger).
+ * Returns 0 for pure known-list casters (Bard/Sorcerer/Warlock/EK/AT).
+ */
+export function getMaxPrepared(classEntries: ClassEntry[], abilityMod: number): number {
+  let bonus = 0;
+  let hasPreparedClass = false;
+  for (const entry of classEntries) {
+    const fn = PREPARED_FORMULA[entry.class];
+    if (fn) { bonus += fn(entry.level); hasPreparedClass = true; }
+  }
+  return hasPreparedClass ? Math.max(1, abilityMod + bonus) : 0;
+}

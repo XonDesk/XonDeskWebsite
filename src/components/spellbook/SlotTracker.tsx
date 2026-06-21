@@ -1,37 +1,8 @@
 import { useApp } from './SpellbookApp';
-
-interface BubbleRowProps {
-  total: number;
-  used: number;
-  color: string;
-  onSetUsed: (n: number) => void;
-}
-
-function BubbleRow({ total, used, color, onSetUsed }: BubbleRowProps) {
-  return (
-    <div className="flex gap-1 items-center">
-      {Array.from({ length: total }, (_, i) => {
-        const filled = i < used;
-        return (
-          <button
-            key={i}
-            aria-label={filled ? `Mark slot ${i + 1} unused` : `Use slot ${i + 1}`}
-            aria-pressed={filled}
-            className="w-6 h-6 rounded-full border-2 transition-colors focus:outline-none focus-visible:ring-2"
-            style={{
-              backgroundColor: filled ? color : 'transparent',
-              borderColor: color,
-            }}
-            onClick={() => onSetUsed(filled ? i : i + 1)}
-          />
-        );
-      })}
-    </div>
-  );
-}
+import CrystalGem from './CrystalGem';
 
 export default function SlotTracker() {
-  const { slots, activeProfile, dispatch } = useApp();
+  const { slots, activeProfile, commands } = useApp();
 
   if (!activeProfile) return null;
 
@@ -43,92 +14,170 @@ export default function SlotTracker() {
 
   return (
     <section
-      className="overflow-x-auto border-b px-4 py-3"
-      style={{ backgroundColor: 'var(--sp-card)', borderColor: 'var(--sp-pink-soft)' }}
-      aria-label="Spell slots"
+      style={{
+        margin: '12px 14px 0',
+        padding: '14px 14px 12px',
+        borderRadius: 18,
+        background: 'var(--sp-panel)',
+        backdropFilter: 'blur(8px)',
+        border: '1px solid var(--sp-border)',
+        boxShadow: '0 10px 30px -12px rgba(247,37,133,0.18)',
+      }}
+      aria-label="Arcane Reserves"
     >
-      <div className="flex gap-6 min-w-max items-start">
-
-        {/* Spell Slots */}
-        {slots.casterLevel > 0 && (
-          <div>
-            <div className="text-xs font-cinzel font-semibold mb-2" style={{ color: 'var(--sp-plum)' }}>Spell Slots</div>
-            <div className="flex flex-col gap-1">
-              {regularLevels.map(({ level, total }) => (
-                <div key={level} className="flex items-center gap-2">
-                  <span className="text-xs w-4 text-right font-cinzel" style={{ color: 'var(--sp-plum)' }}>{level}</span>
-                  <BubbleRow
-                    total={total}
-                    used={slotUsage.regular[level] ?? 0}
-                    color="var(--sp-pink-hot)"
-                    onSetUsed={(n) => dispatch({ type: 'USE_SLOT', slotType: 'regular', level, used: n })}
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Pact Magic */}
-        {slots.pactMagic && (
-          <div>
-            <div className="text-xs font-cinzel font-semibold mb-2" style={{ color: 'var(--sp-pact)' }}>
-              Pact Magic <span className="font-normal opacity-70">(short rest)</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs w-4 text-right font-cinzel" style={{ color: 'var(--sp-pact)' }}>
-                {slots.pactMagic.slotLevel}
-              </span>
-              <BubbleRow
-                total={slots.pactMagic.slots}
-                used={slotUsage.pact}
-                color="var(--sp-pact)"
-                onSetUsed={(n) => dispatch({ type: 'USE_SLOT', slotType: 'pact', used: n })}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Mystic Arcanum */}
-        {slots.arcanumLevels.length > 0 && (
-          <div>
-            <div className="text-xs font-cinzel font-semibold mb-2" style={{ color: 'var(--sp-plum)' }}>Mystic Arcanum</div>
-            <div className="flex flex-col gap-1">
-              {slots.arcanumLevels.map(level => {
-                const used = slotUsage.arcanum[level] ?? 0;
-                return (
-                  <div key={level} className="flex items-center gap-2">
-                    <span className="text-xs w-4 text-right font-cinzel" style={{ color: 'var(--sp-plum)' }}>{level}</span>
-                    <BubbleRow
-                      total={1}
-                      used={used}
-                      color="var(--sp-plum)"
-                      onSetUsed={(n) => dispatch({ type: 'USE_SLOT', slotType: 'arcanum', level, used: (n > 0 ? 1 : 0) as 0 | 1 })}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* Rest buttons */}
-        <div className="flex flex-col gap-2 justify-end self-end pb-0.5">
-          <button
-            className="px-3 py-1 rounded text-xs font-cinzel border"
-            style={{ color: 'var(--sp-plum)', borderColor: 'var(--sp-pink-soft)' }}
-            onClick={() => dispatch({ type: 'LONG_REST' })}
+      {/* Heading row */}
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 10 }}>
+        <div>
+          <span
+            className="font-italianno"
+            style={{ fontSize: '1.375rem', color: 'var(--sp-text-2)', lineHeight: 1 }}
           >
-            Long Rest
+            Arcane Reserves
+          </span>
+          <span
+            className="font-cormorant"
+            style={{ fontSize: '0.6875rem', letterSpacing: '0.18em', textTransform: 'uppercase', color: 'var(--sp-label)', marginLeft: '0.5rem' }}
+          >
+            spell slots
+          </span>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            type="button"
+            onClick={() => commands.longRest()}
+            style={{
+              background: 'none',
+              border: '1px solid var(--sp-border-strong)',
+              borderRadius: 999,
+              color: 'var(--sp-text-2)',
+              padding: '3px 10px',
+              fontSize: 11,
+              cursor: 'pointer',
+              fontFamily: 'Cormorant Garamond, serif',
+            }}
+          >
+            ☾ Long Rest
           </button>
           <button
-            className="px-3 py-1 rounded text-xs font-cinzel border"
-            style={{ color: 'var(--sp-pact)', borderColor: 'var(--sp-pact)' }}
-            onClick={() => dispatch({ type: 'SHORT_REST' })}
+            type="button"
+            onClick={() => commands.shortRest()}
+            style={{
+              background: 'none',
+              border: '1px solid var(--sp-border)',
+              borderRadius: 999,
+              color: 'var(--sp-text-2)',
+              padding: '3px 10px',
+              fontSize: 11,
+              cursor: 'pointer',
+              fontFamily: 'Cormorant Garamond, serif',
+            }}
           >
-            Short Rest
+            ✦ Short
           </button>
         </div>
+      </div>
+
+      {/* Slot rows */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {slots.casterLevel > 0 && regularLevels.map(({ level, total }) => {
+          const used = slotUsage.regular[level] ?? 0;
+          const remaining = total - used;
+          return (
+            <div key={level} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              {/* Level badge */}
+              <div style={{
+                width: 22, height: 22, borderRadius: '50%',
+                background: 'linear-gradient(135deg, var(--sp-accent), var(--sp-accent-mid))',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'Cormorant Garamond, serif', fontSize: 13, fontWeight: 700, color: '#fff',
+                flexShrink: 0,
+              }}>
+                {level}
+              </div>
+              {/* Gems */}
+              <div style={{ display: 'flex', gap: 6, flex: 1 }}>
+                {Array.from({ length: total }, (_, i) => (
+                  <CrystalGem
+                    key={i}
+                    filled={i >= used}
+                    onClick={() => {
+                      const isFilled = i >= used;
+                      commands.useRegularSlot(level, isFilled ? i + 1 : i);
+                    }}
+                    size={18}
+                  />
+                ))}
+              </div>
+              <span style={{ marginLeft: 'auto', fontFamily: 'Cormorant Garamond, serif', fontSize: 13, color: 'var(--sp-text-2)' }}>
+                {remaining}/{total}
+              </span>
+            </div>
+          );
+        })}
+
+        {/* Pact Magic */}
+        {slots.pactMagic && (() => {
+          const used = slotUsage.pact;
+          const total = slots.pactMagic.slots;
+          const remaining = total - used;
+          return (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                width: 22, height: 22, borderRadius: '50%',
+                background: 'rgba(157,78,221,0.2)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'Cormorant Garamond, serif', fontSize: 13, fontWeight: 700, color: 'var(--sp-pact)',
+                flexShrink: 0,
+              }}>
+                {slots.pactMagic.slotLevel}
+              </div>
+              <div style={{ display: 'flex', gap: 6, flex: 1 }}>
+                {Array.from({ length: total }, (_, i) => (
+                  <CrystalGem
+                    key={i}
+                    filled={i >= used}
+                    onClick={() => {
+                      const isFilled = i >= used;
+                      commands.usePactSlot(isFilled ? i + 1 : i);
+                    }}
+                    size={18}
+                  />
+                ))}
+              </div>
+              <span style={{ marginLeft: 'auto', fontFamily: 'Cormorant Garamond, serif', fontSize: 13, color: 'var(--sp-pact)' }}>
+                {remaining}/{total} pact
+              </span>
+            </div>
+          );
+        })()}
+
+        {/* Mystic Arcanum */}
+        {slots.arcanumLevels.map(level => {
+          const used = slotUsage.arcanum[level] ?? 0;
+          return (
+            <div key={level} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{
+                width: 22, height: 22, borderRadius: '50%',
+                background: 'linear-gradient(135deg, var(--sp-accent), var(--sp-accent-mid))',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontFamily: 'Cormorant Garamond, serif', fontSize: 13, fontWeight: 700, color: '#fff',
+                flexShrink: 0,
+              }}>
+                {level}
+              </div>
+              <div style={{ display: 'flex', gap: 6, flex: 1 }}>
+                <CrystalGem
+                  filled={used === 0}
+                  onClick={() => commands.useArcanumSlot(level, used === 0 ? 1 : 0)}
+                  size={18}
+                />
+              </div>
+              <span style={{ marginLeft: 'auto', fontFamily: 'Cormorant Garamond, serif', fontSize: 13, color: 'var(--sp-label)' }}>
+                {used === 0 ? '1/1' : '0/1'} arc
+              </span>
+            </div>
+          );
+        })}
       </div>
     </section>
   );

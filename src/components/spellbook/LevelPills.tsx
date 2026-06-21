@@ -16,30 +16,33 @@ const PILLS = [
 
 export const LevelPills: React.FC<LevelPillsProps> = ({ value, onChange }) => {
   return (
-    <div className="flex gap-1.5 overflow-x-auto pb-1">
-      {PILLS.map((pill) => (
-        <button
-          key={pill.value}
-          onClick={() => onChange(pill.value)}
-          aria-pressed={value === pill.value}
-          className="flex-shrink-0 px-3 py-1 rounded-full text-xs border transition-colors"
-          style={
-            value === pill.value
-              ? {
-                  backgroundColor: 'var(--sp-pink-hot)',
-                  color: '#fff',
-                  borderColor: 'var(--sp-pink-hot)',
-                }
-              : {
-                  backgroundColor: 'transparent',
-                  color: 'var(--sp-plum)',
-                  borderColor: 'var(--sp-pink-soft)',
-                }
-          }
-        >
-          {pill.label}
-        </button>
-      ))}
+    <div style={{ display: 'flex', gap: '0.375rem', overflowX: 'auto', padding: '0.625rem 14px 0.375rem' }}>
+      {PILLS.map((pill) => {
+        const active = value === pill.value;
+        return (
+          <button
+            key={pill.value}
+            onClick={() => onChange(pill.value)}
+            aria-pressed={active}
+            style={{
+              flexShrink: 0,
+              padding: '5px 12px',
+              borderRadius: '999px',
+              cursor: 'pointer',
+              fontFamily: 'Cormorant Garamond, serif',
+              fontSize: '0.75rem',
+              letterSpacing: '0.06em',
+              border: active ? 'none' : '1px solid var(--sp-pink-soft)',
+              background: active
+                ? 'linear-gradient(135deg, var(--sp-pink-hot), var(--sp-accent-mid))'
+                : 'transparent',
+              color: active ? '#fff' : 'var(--sp-plum)',
+            }}
+          >
+            {pill.label}
+          </button>
+        );
+      })}
     </div>
   );
 };

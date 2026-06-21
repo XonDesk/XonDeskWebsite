@@ -10,6 +10,12 @@ export interface Profile {
   spellbooks: Spellbook[];
   activeSpellbookId: string;
   slotUsage: SlotUsage;
+  avatarHue: number;
+  spellAbility: 'INT' | 'WIS' | 'CHA';
+  abilityMod: number;
+  prepared: string[];
+  favorites: string[];
+  concentration: { spellId: string; level: number } | null;
 }
 
 export interface ClassEntry {

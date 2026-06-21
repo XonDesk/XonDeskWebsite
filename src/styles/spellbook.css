@@ -1,45 +1,125 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lora:ital,wght@0,400;0,600;1,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,500&family=Italianno&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  color-scheme: light dark;
-  --sp-pink-hot:  #f72585;
-  --sp-pink-soft: #ff85c2;
-  --sp-bg:        #fff0f8;
-  --sp-card:      #ffffff;
-  --sp-plum:      #3d0c45;
-  --sp-muted:     #9b5a82;
-  --sp-badge-bg:  #ffb3d9;
-  --sp-pact:      #9D4EDD;
+  --sp-accent:          #f72585;
+  --sp-accent-mid:      #ff85c2;
+  --sp-accent-muted:    rgba(247,37,133,0.25);
+  --sp-bg:              #fdf3f8;
+  --sp-panel:           rgba(255,255,255,0.7);
+  --sp-card:            rgba(255,255,255,0.6);
+  --sp-text:            #3a1330;
+  --sp-text-2:          #9b2566;
+  --sp-label:           #c2519a;
+  --sp-border:          rgba(247,37,133,0.10);
+  --sp-border-strong:   rgba(247,37,133,0.25);
+  --sp-conc-bg:         rgba(168,85,247,0.10);
+  --sp-conc-border:     rgba(168,85,247,0.30);
+  --sp-conc-text:       #7c3aed;
+  --sp-pact:            #9D4EDD;
+  --sp-bg-gradient:     radial-gradient(120% 80% at 50% 0%, #ffeaf2, #fdf3f8);
+  --sp-sidebar-glass:   rgba(255, 255, 255, 0.35);
+  --sp-list-shadow:     0 18px 40px -16px rgba(247,37,133,0.25);
+  --sp-header-bg:       linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0));
+  --sp-header-icon:     #f72585;
+  /* School tag colours — lightness flips in dark mode */
+  --sp-school-l:        42%;
+  --sp-school-bg-a:     0.14;
+  /* Level pill aliases */
+  --sp-pink-hot:        #f72585;
+  --sp-pink-soft:       rgba(247,37,133,0.30);
+  --sp-plum:            #7a1f5c;
+  /* Density — cozy defaults */
+  --sp-card-py:         0.75rem;
+  --sp-card-px:         1rem;
+  --sp-grid-gap:        8px;
+  --sp-grid-min:        260px;
+  --sp-name-size:       0.9375rem;
+  --sp-meta-size:       0.75rem;
+}
+
+.compact {
+  --sp-card-py:         0.4375rem;
+  --sp-card-px:         0.75rem;
+  --sp-grid-gap:        5px;
+  --sp-grid-min:        200px;
+  --sp-name-size:       0.8125rem;
+  --sp-meta-size:       0.6875rem;
+}
+
+.dark {
+  --sp-accent:          #ff5eaa;
+  --sp-accent-mid:      #ff85c2;
+  --sp-accent-muted:    rgba(255,133,194,0.35);
+  --sp-bg:              #15050f;
+  --sp-panel:           rgba(60,15,42,0.55);
+  --sp-card:            rgba(255,255,255,0.04);
+  --sp-text:            #ffe2ee;
+  --sp-text-2:          #d490b5;
+  --sp-label:           #c269a0;
+  --sp-border:          rgba(255,133,194,0.18);
+  --sp-border-strong:   rgba(255,133,194,0.35);
+  --sp-conc-bg:         rgba(168,85,247,0.16);
+  --sp-conc-border:     rgba(196,140,255,0.40);
+  --sp-conc-text:       #d8b4fe;
+  --sp-pact:            #c084fc;
+  --sp-bg-gradient:     radial-gradient(120% 80% at 50% 0%, #2a0820, #15050f);
+  --sp-sidebar-glass:   rgba(15, 5, 15, 0.4);
+  --sp-list-shadow:     0 0 30px -6px rgba(247,37,133,0.25);
+  --sp-header-bg:       linear-gradient(180deg, rgba(255,133,194,0.10), rgba(0,0,0,0));
+  --sp-header-icon:     #2a0820;
+  --sp-school-l:        72%;
+  --sp-school-bg-a:     0.22;
+  --sp-pink-hot:        #ff5eaa;
+  --sp-pink-soft:       rgba(255,133,194,0.40);
+  --sp-plum:            #d490b5;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --sp-bg:        #1a0a1e;
-    --sp-card:      #2a0d35;
-    --sp-plum:      #ffb3e6;
-    --sp-muted:     #cc88bb;
-    --sp-badge-bg:  #5a1a6b;
+  :root:not(.light) {
+    --sp-accent:          #ff5eaa;
+    --sp-accent-mid:      #ff85c2;
+    --sp-accent-muted:    rgba(255,133,194,0.35);
+    --sp-bg:              #15050f;
+    --sp-panel:           rgba(60,15,42,0.55);
+    --sp-card:            rgba(255,255,255,0.04);
+    --sp-text:            #ffe2ee;
+    --sp-text-2:          #d490b5;
+    --sp-label:           #c269a0;
+    --sp-border:          rgba(255,133,194,0.18);
+    --sp-border-strong:   rgba(255,133,194,0.35);
+    --sp-conc-bg:         rgba(168,85,247,0.16);
+    --sp-conc-border:     rgba(196,140,255,0.40);
+    --sp-conc-text:       #d8b4fe;
+    --sp-pact:            #c084fc;
+    --sp-bg-gradient:     radial-gradient(120% 80% at 50% 0%, #2a0820, #15050f);
+    --sp-sidebar-glass:   rgba(15, 5, 15, 0.4);
+    --sp-list-shadow:     0 0 30px -6px rgba(247,37,133,0.25);
+    --sp-header-bg:       linear-gradient(180deg, rgba(255,133,194,0.10), rgba(0,0,0,0));
+    --sp-header-icon:     #2a0820;
+    --sp-school-l:        72%;
+    --sp-school-bg-a:     0.22;
+    --sp-pink-hot:        #ff5eaa;
+    --sp-pink-soft:       rgba(255,133,194,0.40);
+    --sp-plum:            #d490b5;
   }
 }
 
 @theme {
-  --color-sp-pink-hot:  #f72585;
-  --color-sp-pink-soft: #ff85c2;
-  --color-sp-bg:        #fff0f8;
-  --color-sp-card:      #ffffff;
-  --color-sp-plum:      #3d0c45;
-  --color-sp-muted:     #9b5a82;
-  --color-sp-badge-bg:  #ffb3d9;
-  --color-sp-pact:      #9D4EDD;
-}
-
-body {
-  background-color: var(--sp-bg);
+  --color-sp-accent:        #f72585;
+  --color-sp-accent-mid:    #ff85c2;
+  --color-sp-bg:            #fdf3f8;
+  --color-sp-panel:         rgba(255,255,255,0.7);
+  --color-sp-card:          rgba(255,255,255,0.6);
+  --color-sp-text:          #3a1330;
+  --color-sp-text-2:        #9b2566;
+  --color-sp-label:         #c2519a;
+  --color-sp-border:        rgba(247,37,133,0.10);
+  --color-sp-pact:          #9D4EDD;
 }
 
 @layer utilities {
-  .font-cinzel { font-family: 'Cinzel', serif; }
-  .font-lora { font-family: 'Lora', serif; }
-  .gradient-header { background: linear-gradient(135deg, #f72585 0%, #ff85c2 100%); }
+  .font-cormorant { font-family: 'Cormorant Garamond', serif; }
+  .font-italianno { font-family: 'Italianno', cursive; }
+  .font-inter     { font-family: 'Inter', sans-serif; }
 }
