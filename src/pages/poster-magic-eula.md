@@ -1,109 +1,112 @@
 ---
 layout: ../layouts/MarkdownLayout.astro
 title: Poster Magic Terms of Service
-lastUpdated: March 9, 2026
+lastUpdated: October 2, 2026
 ---
 
 # Poster Magic Terms of Service (EULA)
 
+These Terms of Service ("Terms") are an agreement between you and **Sunbreak LLC** ("we", "us"), the maker of the Poster Magic app ("App"). They are the end user license agreement for the App.
+
 **1. Acceptance of Terms**
-By using the Poster Magic application ("App"), you agree to these Terms of Service ("Terms"). If you do not agree to these Terms, do not use the App.
+By downloading or using the App you agree to these Terms and to our [Privacy Policy](/poster-magic-policy/). If you do not agree, do not use the App.
 
-**2. Description of Service**
-Poster Magic allows you to:
-- Scan event posters to extract event details using AI
-- Save events to your personal calendar
-- Optionally share events with the Poster Magic community
+**2. What the App Does**
+Poster Magic lets you:
+- scan an event poster and have its details (title, date, time, place) extracted automatically;
+- save events to your calendar; and
+- optionally share events publicly with other Poster Magic users.
 
-**3. User Accounts**
-- You must be at least 13 years old to use this App
-- You are responsible for maintaining the security of your account
-- You are responsible for all activity that occurs under your account
+To extract event details, the App sends the poster photo and the text read from it to a third-party AI service (Google Gemini), as described in our Privacy Policy. **AI-extracted details can be wrong.** Check the date, time and place before you rely on an event.
 
-**4. Community Sharing & Content Guidelines**
-When sharing events publicly, you agree to:
+**3. Your Account**
+- You must be at least 13 years old, or the minimum age required where you live, to use the App.
+- You are responsible for keeping your account secure and for everything done with it.
+- You can delete your account at any time in the App under **Settings → Delete Account**.
+
+**4. Sharing Events**
+When you save an event with **"Slide to Save Event"**, it is added to your calendar *and* shared publicly, where other Poster Magic users may see it. Choose **"Add to Calendar"** instead to keep an event private. Shared events must follow the rules below.
 
 **4.1 Accuracy**
-- Only share accurate, real event information
-- Not create fake, spam, or misleading event listings
-- Verify event details before sharing
+- Only share real events with accurate details.
+- Do not create fake, spam or misleading listings.
 
 **4.2 Prohibited Content**
 You may NOT share content that:
-- Is illegal, harmful, or promotes illegal activities
-- Contains hate speech, discrimination, or harassment
-- Is sexually explicit or pornographic
-- Promotes violence or dangerous activities
-- Infringes on intellectual property rights
-- Contains malware, spam, or phishing attempts
-- Impersonates others or misrepresents your identity
+- is illegal, harmful, or promotes illegal activity;
+- contains hate speech, discrimination or harassment;
+- is sexually explicit or pornographic;
+- promotes violence or dangerous activities;
+- infringes anyone's intellectual property or privacy rights;
+- contains malware, spam or phishing; or
+- impersonates someone or misrepresents your identity.
 
-**4.3 Content Moderation**
-- We maintain a zero-tolerance policy for objectionable content.
-- All shared content is subject to automated and manual review.
-- Content that violates these guidelines may be removed without notice.
-- Repeated violations may result in account restrictions or termination.
+**4.3 Moderation**
+- **We have zero tolerance for objectionable content or abusive users.**
+- Shared events are checked automatically before they are published, and anything flagged is held for review.
+- **We review reports of objectionable content within 24 hours**, remove content that breaks these Terms, and suspend or remove the accounts of users who posted it.
+- We may remove any content without notice.
 
-**5. User Conduct**
+**5. Conduct**
 You agree NOT to:
-- Abuse, harass, or threaten other users
-- Submit false reports against other users or events
-- Attempt to circumvent content moderation systems
-- Use automated tools to scrape or manipulate the service
-- Interfere with the proper functioning of the App
+- abuse, harass or threaten other users;
+- submit false reports;
+- try to get around moderation, scan limits or purchases;
+- use bots, scrapers or other automated tools with the App or its services; or
+- interfere with the App or the servers it relies on.
 
-**6. Reporting & Blocking**
-- You may report events that violate these Terms
-- You may block users whose content you do not wish to see
-- False or abusive reporting may result in account restrictions
+**6. Reporting and Blocking**
+- You can report any shared event that breaks these Terms from inside the App.
+- You can block another user so you no longer see their content.
+- False or abusive reports may lead to restrictions on your account.
 
-**7. Subscriptions and Purchases**
-Poster Magic offers auto-renewing subscriptions (monthly and yearly) and one-time consumable purchases ("Scan Packs").
-- **Payment:** Payment will be charged to your Apple ID or Google Play account at the confirmation of purchase.
-- **Auto-Renewal:** Subscriptions automatically renew unless auto-renew is turned off at least 24 hours before the end of the current period.
-- **Account Charging:** Your account will be charged for renewal within 24 hours prior to the end of the current period.
-- **Cancellation:** You can manage and cancel your subscriptions by going to your App Store or Google Play account settings after purchase. Canceling a subscription will stop future renewals, but no refunds will be provided for the current active period.
-- **Consumables:** "Scan Packs" are one-time purchases that do not renew. Once purchased, the specific number of scans is added to your account.
+**7. Free Use, Ads and Purchases**
+The App includes a monthly allowance of free scans and shows ads to free users. You can earn bonus scans by watching rewarded ads, or buy more through auto-renewing subscriptions (monthly or yearly) or one-time **Scan Packs**.
+- **Payment** is charged to your Apple ID when you confirm the purchase.
+- **Subscriptions renew automatically** unless auto-renew is turned off at least 24 hours before the end of the current period. Renewal is charged within the 24 hours before the current period ends.
+- **Cancel** at any time in **Settings → [your name] → Subscriptions** on your device. Cancelling stops future renewals; you keep access until the end of the period you have paid for.
+- **Refunds** are handled by Apple under its policies.
+- **Scan Packs** are one-time purchases that add a set number of scans to your account. They do not renew.
+- Deleting your account or the App does not cancel a subscription.
 
-**8. App Store Specific Terms (Apple/iOS Users)**
-If you are downloading the App from the Apple App Store, the following terms apply:
-- **Acknowledgment:** You and Poster Magic acknowledge that this agreement is between you and Poster Magic only, not with Apple, and Poster Magic is solely responsible for the App and its content.
-- **Scope of License:** The license granted to you for the App is a non-transferable license to use the App on any Apple-branded products that you own or control as permitted by the Usage Rules set forth in the Apple Media Services Terms and Conditions.
-- **Maintenance and Support:** Poster Magic is solely responsible for providing any maintenance and support services with respect to the App. Apple has no obligation whatsoever to furnish any maintenance and support services with respect to the App.
-- **Warranty:** Poster Magic is solely responsible for any product warranties, whether express or implied by law, to the extent not effectively disclaimed. In the event of any failure of the App to conform to any applicable warranty, you may notify Apple, and Apple will refund the purchase price for the App to you; and to the maximum extent permitted by applicable law, Apple will have no other warranty obligation whatsoever with respect to the App.
-- **Product Claims:** You and Poster Magic acknowledge that Poster Magic, not Apple, is responsible for addressing any claims of you or any third party relating to the App or your possession and/or use of that App.
-- **Intellectual Property Rights:** You and Poster Magic acknowledge that, in the event of any third-party claim that the App or your possession and use of that App infringes that third party’s intellectual property rights, Poster Magic, not Apple, will be solely responsible for the investigation, defense, settlement and discharge of any such intellectual property infringement claim.
-- **Third-Party Beneficiary:** You and Poster Magic acknowledge and agree that Apple, and Apple’s subsidiaries, are third-party beneficiaries of these Terms, and that Apple will have the right (and will be deemed to have accepted the right) to enforce these Terms against you as a third-party beneficiary thereof.
+**8. Your Content and Licence**
+- You keep ownership of the photos you scan and the events you create.
+- By sharing an event, you give Sunbreak LLC a worldwide, non-exclusive, royalty-free licence to store, display and distribute it within the App and its services. This licence ends when the event is deleted, except where other users have also contributed the same event.
+- The App, its design and the Poster Magic name and logo belong to Sunbreak LLC. We grant you a personal, non-transferable licence to use the App under these Terms.
 
-**9. Intellectual Property**
-- You retain ownership of content you create
-- By sharing events publicly, you grant Poster Magic a license to display and distribute that content within the App
-- Poster Magic and its logos are trademarks of Poster Magic
+**9. Disclaimers**
+- Event information comes from posters and from other users, and may be wrong. We do not guarantee that any event is accurate, will take place, or is safe to attend.
+- We are not responsible for events that are cancelled, rescheduled or misrepresented.
+- THE APP IS PROVIDED "AS IS" AND "AS AVAILABLE", WITHOUT WARRANTIES OF ANY KIND, TO THE EXTENT PERMITTED BY LAW.
 
-**10. Privacy**
-Your use of the App is also governed by our Privacy Policy at xondesk.com/poster-magic-policy
+**10. Limitation of Liability**
+TO THE MAXIMUM EXTENT PERMITTED BY LAW, SUNBREAK LLC SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUE, ARISING FROM YOUR USE OF THE APP. Nothing in these Terms limits any rights you have under consumer protection laws that cannot be waived.
 
-**11. Disclaimers**
-- Event information is user-generated and may contain errors
-- Poster Magic does not guarantee the accuracy of event details
-- Poster Magic is not responsible for events that are cancelled, rescheduled, or misrepresented
-- THE APP IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND
+**11. Suspension and Termination**
+We may remove content, restrict or suspend accounts that break these Terms, and change or discontinue the App at any time. You may stop using the App and delete your account at any time.
 
-**12. Limitation of Liability**
-TO THE MAXIMUM EXTENT PERMITTED BY LAW, POSTER MAGIC SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF PROFITS OR REVENUES.
+**12. Apple App Store Terms**
+If you downloaded the App from Apple's App Store:
+- **Acknowledgment.** These Terms are between you and Sunbreak LLC only, not with Apple. Sunbreak LLC, not Apple, is solely responsible for the App and its content.
+- **Scope of licence.** Your licence to use the App is a non-transferable licence to use it on Apple-branded products that you own or control, as permitted by the Usage Rules in the Apple Media Services Terms and Conditions, except that it may be accessed by other accounts associated with you through Family Sharing or volume purchasing.
+- **Maintenance and support.** Sunbreak LLC is solely responsible for maintenance and support of the App. Apple has no obligation to provide any maintenance or support.
+- **Warranty.** Sunbreak LLC is solely responsible for any product warranties, express or implied by law, to the extent not effectively disclaimed. If the App fails to conform to any applicable warranty, you may notify Apple and Apple will refund the purchase price of the App, if any. To the maximum extent permitted by law, Apple has no other warranty obligation with respect to the App.
+- **Product claims.** Sunbreak LLC, not Apple, is responsible for addressing any claims by you or a third party relating to the App or your possession or use of it, including product liability claims, claims that the App fails to meet any legal or regulatory requirement, and claims under consumer protection, privacy or similar laws.
+- **Intellectual property.** If a third party claims that the App or your possession and use of it infringes that party's intellectual property rights, Sunbreak LLC, not Apple, is solely responsible for investigating, defending, settling and discharging the claim.
+- **Legal compliance.** You represent that you are not located in a country subject to a U.S. Government embargo or designated by the U.S. Government as a "terrorist supporting" country, and that you are not on any U.S. Government list of prohibited or restricted parties.
+- **Third-party terms.** You must comply with any applicable third-party terms (for example, your wireless data agreement) when using the App.
+- **Third-party beneficiary.** Apple and its subsidiaries are third-party beneficiaries of these Terms and, once you accept them, Apple has the right (and is deemed to have accepted the right) to enforce them against you.
 
-**13. Account Restrictions**
-Poster Magic reserves the right to:
-- Remove content that violates these Terms
-- Restrict or terminate accounts that violate these Terms
-- Modify or discontinue the service at any time
+**13. Privacy**
+How we collect and use your information is explained in our [Privacy Policy](/poster-magic-policy/).
 
-**14. Changes to Terms**
-We may update these Terms from time to time. Continued use of the App after changes constitutes acceptance of the new Terms.
+**14. Changes to These Terms**
+We may update these Terms. If a change is significant we will tell you in the App before it takes effect. Continuing to use the App after a change means you accept the new Terms.
 
 **15. Governing Law**
-These Terms shall be governed by the laws of the State of Washington, United States.
+These Terms are governed by the laws of the State of Washington, United States, except where the law of the country you live in requires otherwise.
 
 **16. Contact**
-For questions about these Terms, contact us at:
-xondesk@outlook.com
+Questions, complaints or claims about the App:
+**Sunbreak LLC**, Seattle, Washington, United States
+Email: [xondesk@outlook.com](mailto:xondesk@outlook.com)

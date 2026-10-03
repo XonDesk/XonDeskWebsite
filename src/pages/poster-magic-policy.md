@@ -1,96 +1,152 @@
 ---
 layout: ../layouts/MarkdownLayout.astro
 title: Poster Magic Privacy Policy
-lastUpdated: March 9, 2026
+lastUpdated: October 2, 2026
 ---
 
 # Privacy Policy
 
-**Effective Date:** March 9, 2026  
-**Last Updated:** March 9, 2026  
+**Effective date:** October 2, 2026
 
-## 1. Introduction
+Sunbreak LLC ("we", "us", "our") makes the Poster Magic app for iPhone and iPad. This policy explains what information Poster Magic collects, how it is collected, what we use it for, who we share it with, how long we keep it, and how you can delete it or change your mind.
 
-Sunbreak LLC ("we," "our," or "us") operates the Poster Magic mobile application. We respect your privacy and are committed to protecting the personal information you share with us.
+If you have any question about it, email **[xondesk@outlook.com](mailto:xondesk@outlook.com)**.
 
-This Privacy Policy explains what information we collect, how we use it, and your rights regarding that data when you use Poster Magic globally.
+## 1. The short version
 
-## 2. Information We Collect
+- To turn a poster into a calendar event, we send the poster photo and the text read from it to Google's Gemini AI. We do not keep the photo. Google does not use it to train its models.
+- Events you **choose to share** become part of a public event collection. They are linked to a scrambled identifier, never to your name or email.
+- Your scan history stays on your device.
+- We show ads, but we ask our ad network for **non-personalized** ads only. We do not sell your personal information.
+- You can delete your account, and the data tied to it, from inside the app at any time.
 
-### A. Account Information
-When you create an account, we use Google Firebase Authentication to verify your identity. Depending on the method you choose (Sign in with Apple, Google, Email, or SMS), we may process:
-*   Email address
-*   Phone number
-*   User ID (assigned by Firebase)
+## 2. Information we collect
 
-**Note:** We do not store your email or phone number in our own separate database; this information resides within the secure Firebase Authentication infrastructure.
+### Account information
+To use Poster Magic you sign in with Apple, Google, or an email address and password. We receive your **email address** (or Apple's private relay address if you choose "Hide My Email") and an account ID from Google Firebase Authentication.
 
-### B. User Content (Photos and Images)
-To provide the core functionality of Poster Magic, you upload photos to our service.
-*   **Transient Processing:** Your photos are securely transmitted to our cloud servers solely for the purpose of processing them with our AI engine.
-*   **No Permanent Storage:** Once the AI analysis is complete and the response is returned to your device, the original photo is permanently deleted from our servers. We do not retain, store, or archive your photos.
+We keep a profile for your account that holds your email address, account ID, the date you signed up, your scan allowance and how much of it you have used, your subscription status, bonus scans earned from rewarded ads, your app settings, when you accepted our Terms of Service, the people you have blocked, and any record of moderation action taken on your account.
 
-### C. Technical Data and Logs
-We collect certain technical data to ensure the app is stable and to debug errors. This includes:
-*   **Device Information:** Device model, OS version, and unique device identifiers.
-*   **Usage Logs:** Anonymized logs of app crashes or errors.
-*   **IP Address:** Collected automatically by our infrastructure providers for security and fraud prevention.
+### Poster photos and scanned text
+When you scan a poster, the app first reads its text **on your device** using Apple's built-in text recognition. It then sends the photo and that text to our server, which passes them to **Google's Gemini AI** to extract the event details (title, date, time, place and so on). The results are sent back to your device.
 
-## 3. How We Use Your Information
+- We **do not store** your poster photos on our servers. They exist on our server only while the request is being processed.
+- We use Gemini under Google's paid service terms, under which Google **does not use** prompts, images or responses to improve its products. Google keeps them for a limited period solely to detect abuse of its service.
+- Some devices with Apple Intelligence suggest event tags using Apple's on-device model. That processing never leaves your device.
 
-We use your data for the following specific, limited purposes:
-*   **To Provide the Service:** Authenticating your login and processing your photos to generate poster content.
-*   **AI Processing:** We use Google Cloud (Gemini) strictly to analyze your photos. We have explicitly configured our systems to opt-out of data logging for model training. **Your data is not used to train Google’s or any other third-party AI models.**
-*   **App Stability:** We use Firebase Crashlytics and Firebase Analytics to identify crashes and improve app performance. We **do not** share your analytics data with Google for their own advertising or benchmarking purposes.
-*   **Authentication & Access:** Information like your email is used strictly for account access and security. We do not use your email or phone number for marketing updates or newsletters.
+### Events you choose to share
+When you save an event, you choose between **"Slide to Save Event"**, which adds it to your calendar *and* shares it publicly, and **"Add to Calendar"**, which keeps it private. If you share, we store the event's details in our public event collection: title, description, location, dates and times, recurrence, website, organizer, QR code links, tags, social media handle, the text read from the poster, and the time zone.
 
-## 4. Third-Party Service Providers
+To prepare a shared event we also:
+- convert the location text into map coordinates using **Google's Geocoding service**;
+- check the text against content rules using **OpenAI's moderation service**, and hold anything flagged for review; and
+- create a numeric "fingerprint" of the text with Gemini so we can recognise duplicate events.
 
-We do not sell your data. We share data only with the trusted third-party infrastructure providers necessary to run the app:
+A shared event is linked to a one-way scrambled version of your account ID, so it cannot be traced back to your name or email by other users. Shared events may be shown to other people using Poster Magic.
 
-| Provider | Purpose | Privacy Policy |
+### Reports and blocks
+If you report an event, we record the event, your reason and your account ID so we can review it. If you block another person, we store that on your profile.
+
+### Purchases
+Subscriptions and scan packs are sold by Apple. **We never receive your payment card details.** We use **RevenueCat** to manage purchases. RevenueCat receives your account ID and the purchase records Apple provides (product, date, renewal and expiry) so it can tell the app which features you have paid for. We keep your current subscription status on your profile.
+
+### Advertising
+Free accounts see ads served by **Google AdMob**. The app asks AdMob for **non-personalized ads only**, meaning ads are not chosen based on a profile of your interests. iOS asks for your permission before the app may use your device's advertising identifier; you can say no, and you can change your answer at any time in **Settings → Privacy & Security → Tracking**. To deliver and measure ads and prevent fraud, AdMob may still receive device information, your IP address (and an approximate location derived from it) and how you interact with ads. If you watch a rewarded ad for a bonus scan, AdMob tells our server your account ID so we can credit the reward.
+
+### Diagnostics and usage
+- **Crash and error reports (Sentry).** When the app crashes or hits an error, it sends a report containing technical details (device model, iOS version, app version, what the app was doing) along with your account ID and email address, so we can find and fix the problem for you. Screenshots are never attached.
+- **Usage statistics (Google Analytics for Firebase).** We record basic events, such as sign-ups, sign-ins and scans, with an app-installation identifier and your account ID, to understand how the app is used.
+- **App integrity (Firebase App Check with Apple App Attest).** The app proves to our server that it is a genuine copy running on a real Apple device. This uses device attestation data, not personal information.
+- **Feedback.** If you send feedback, we receive your message and, if you choose to give them, your name and email. Feedback is delivered to us through Sentry.
+
+### Permissions on your device
+The app asks for access only when you use a feature that needs it, and you can change these at any time in iOS Settings.
+- **Camera** and **Photos**, to scan posters and, if you turn the setting on, save the poster to a "Poster Magic" album.
+- **Calendar**, to add the events you choose. We do not read your other calendar entries or send them anywhere.
+- **Location**, only if you use a feature that shows events near you. Your location is used to look up nearby events and is not stored on our servers.
+
+### Stored only on your device
+Your scan history, saved poster images and calendar files stay on your device. We never receive them.
+
+## 3. How we use information
+
+We use the information above only to:
+- provide the app: sign you in, scan posters, add events to your calendar, and run the public event collection;
+- manage your subscription, scan allowance and rewards;
+- keep the service safe: moderate shared content, act on reports, and prevent fraud and abuse;
+- find and fix bugs, and understand how the app is used so we can improve it; and
+- show non-personalized ads to free users.
+
+We do not use your information for marketing email, and **we do not sell or rent your personal information**, or share it for targeted advertising.
+
+## 4. Who we share it with
+
+We share information only with the service providers that run parts of Poster Magic for us, and only for the purposes above. Each one is bound by its own terms to protect your information to a standard at least as protective as this policy.
+
+| Provider | What it does for us | Their privacy policy |
 | :--- | :--- | :--- |
-| **Google Firebase** | Authentication, Database, & Analytics | [Google Privacy Policy](https://policies.google.com/privacy) |
-| **Google Cloud (Gemini)** | AI Image Processing | [Google Cloud Privacy](https://cloud.google.com/privacy) |
+| Google Firebase | Sign-in, account database, server functions, usage statistics, app integrity checks | [policies.google.com/privacy](https://policies.google.com/privacy) |
+| Google Gemini API | Reading event details from poster photos | [Gemini API terms](https://ai.google.dev/gemini-api/terms) |
+| Google Maps Platform | Turning event locations into map coordinates | [policies.google.com/privacy](https://policies.google.com/privacy) |
+| Google AdMob | Showing ads to free users | [policies.google.com/technologies/ads](https://policies.google.com/technologies/ads) |
+| Supabase | Hosting the public event collection and reports | [supabase.com/privacy](https://supabase.com/privacy) |
+| OpenAI | Checking shared events against content rules | [openai.com/policies/privacy-policy](https://openai.com/policies/privacy-policy) |
+| RevenueCat | Managing subscriptions and purchases | [revenuecat.com/privacy](https://www.revenuecat.com/privacy) |
+| Sentry | Crash and error reports, and feedback | [sentry.io/privacy](https://sentry.io/privacy/) |
+| Apple | Sign in with Apple, purchases, app integrity checks | [apple.com/legal/privacy](https://www.apple.com/legal/privacy/) |
 
-## 5. Data Retention and Deletion
+We may also disclose information if required by law, to protect the safety of our users or others, or as part of a sale or merger of our business (in which case this policy would continue to apply to your information).
 
-We are committed to data minimization:
-*   **Photos:** Deleted immediately after AI processing is complete.
-*   **Generated Content:** The `.ics` (calendar) files and poster images generated by the app are stored locally on your device. We do not store copies of these on our servers.
-*   **Account Deletion (In-App):** You have the right to delete your account and associated data at any time directly within the app settings. When you request deletion, your authentication credentials are removed from Firebase, and any associated user ID data is permanently wiped.
-*   **Account Deletion (Web Request):** You may also request the deletion of your account and data without using the app by emailing us at [xondeck@outlook.com](mailto:xondeck@outlook.com) with the subject "Account Deletion Request".
+## 5. How long we keep it
 
-## 6. Data Security
+- **Account and profile:** until you delete your account.
+- **Poster photos:** not stored by us. Google keeps Gemini requests for a limited period for abuse detection only.
+- **Shared events:** while they are part of the public collection, or until you delete your account (see below).
+- **Reports:** for as long as needed to review them and keep the service safe.
+- **Crash reports and usage statistics:** automatically deleted after the retention period set in Sentry and Google Analytics, at most 14 months.
+- **Purchase records:** for as long as the law requires for tax and accounting.
 
-We implement appropriate administrative, technical, and physical security measures to protect your personal information. All data transmitted between your device and our servers (including photo uploads) is encrypted in transit using industry-standard protocols (e.g., HTTPS/TLS).
+## 6. Deleting your data and changing your mind
 
-## 7. Your Privacy Rights (Global, US State, and GDPR Compliance)
+- **Delete your account in the app:** open **Settings → Delete Account**. This permanently deletes your sign-in account and profile, deletes the shared events that only you contributed, and removes your link to shared events that other people also contributed. Your scan history is on your device and is removed when you delete the app.
+- **Delete by email:** if you can't use the app, email **[xondesk@outlook.com](mailto:xondesk@outlook.com)** with the subject "Account Deletion Request" from the address on your account. We will also delete your purchase history held by RevenueCat on request.
+- **Subscriptions:** deleting your account does not cancel an App Store subscription. Cancel it in **Settings → [your name] → Subscriptions**.
+- **Withdraw permissions:** turn off camera, photo, calendar, location or tracking access at any time in iOS Settings. If you used Sign in with Apple you can stop using it in **Settings → [your name] → Sign-In & Security → Sign in with Apple**.
 
-Depending on your location (such as the European Economic Area, United Kingdom, or US states like California and Washington), you may have the following rights regarding your personal information:
-*   **Right to Access:** You can request to know what personal data we hold about you.
-*   **Right to Deletion:** You have the right to request the deletion of your personal data.
-*   **Right to Correction:** You can request that we update or correct inaccuracies in your data.
-*   **Right to Withdraw Consent:** You can withdraw previously given consent for data processing.
-*   **Non-Discrimination:** We will not discriminate against you for exercising your privacy rights.
+## 7. Your privacy rights
 
-To exercise any of these rights, please contact us at [xondeck@outlook.com](mailto:xondeck@outlook.com).
+Depending on where you live (for example the European Economic Area, the United Kingdom, or a US state such as California or Washington), you may have the right to:
+- **access** the personal information we hold about you and get a copy of it;
+- **correct** it;
+- **delete** it;
+- **object to** or **restrict** how we use it;
+- **withdraw consent** where we rely on it; and
+- **not be treated differently** for exercising these rights.
 
-### International Data Transfers
-If you are located outside the United States, please be aware that your information will be transferred to, processed, and stored in the United States. By using Poster Magic, you consent to this transfer, processing, and storage of your information in the US, where privacy laws may differ from those in your jurisdiction.
+Email **[xondesk@outlook.com](mailto:xondesk@outlook.com)** to make a request. We will respond within the time the law requires, usually 30 days. You may also complain to your local data protection authority.
 
-## 8. Children’s Privacy
+**Legal bases (EEA and UK users).** We process your information to provide the service you signed up for (contract); to keep the service secure, fix bugs and improve it (our legitimate interests); where you have given permission, such as for device access or tracking (consent); and to meet legal obligations.
 
-Poster Magic is intended for a general audience. We do not knowingly collect personal information from children under the age of 13. If we become aware that we have inadvertently collected data from a child under 13, we will take steps to delete it immediately. 
+## 8. Security
 
-## 9. Changes to This Privacy Policy
+Information sent between the app and our servers is encrypted in transit (HTTPS/TLS), and our providers encrypt stored data. Access to our systems is limited to what is needed to run Poster Magic. No system is perfectly secure, but we take reasonable steps to protect your information.
 
-We may update this Privacy Policy from time to time to reflect changes in our practices or for legal, regulatory, or operational reasons. If we make material changes, we will notify you by updating the "Effective Date" at the top of this policy and, if required by law, by providing notice within the app.
+## 9. International transfers
 
-## 10. Contact Us
+Poster Magic is operated from the United States, and our providers process information in the United States and other countries. Where the law requires it, transfers are protected by safeguards such as the European Commission's Standard Contractual Clauses.
 
-If you have any questions, concerns, or requests regarding this Privacy Policy or your data, please contact us at:
+## 10. Children
 
-**Email:** [xondeck@outlook.com](mailto:xondeck@outlook.com)  
-**Sunbreak LLC**  
-**(Seattle, Washington)**
+Poster Magic is not intended for children under 13 (or the minimum age required where you live), and we do not knowingly collect their personal information. If you believe a child has given us personal information, contact us and we will delete it.
+
+## 11. Changes to this policy
+
+If we change this policy we will update the date at the top. If a change is significant, we will also tell you in the app before it takes effect.
+
+## 12. Contact us
+
+**Sunbreak LLC**
+Seattle, Washington, United States
+Email: **[xondesk@outlook.com](mailto:xondesk@outlook.com)**
+
+Our Terms of Service are at [xondesk.com/poster-magic-eula](/poster-magic-eula/).
