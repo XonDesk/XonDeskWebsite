@@ -44,7 +44,7 @@ You may NOT share content that:
 **4.3 Moderation**
 - **We have zero tolerance for objectionable content or abusive users.**
 - Shared events are checked automatically before they are published, and anything flagged is held for review.
-- **We review reports of objectionable content within 24 hours**, remove content that breaks these Terms, and suspend or remove the accounts of users who posted it.
+- **We review reports of objectionable content**, remove content that breaks these Terms, and suspend or remove the accounts of users who posted it. Poster Magic is in beta, so we don't yet commit to a set response time.
 - We may remove any content without notice.
 
 **5. Conduct**
