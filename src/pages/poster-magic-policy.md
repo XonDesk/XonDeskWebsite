@@ -6,7 +6,7 @@ lastUpdated: October 2, 2026
 
 # Privacy Policy
 
-**Effective date:** October 2, 2026
+**Effective date:** November 6, 2026
 
 Sunbreak LLC ("we", "us", "our") makes the Poster Magic app for iPhone and iPad. This policy explains what information Poster Magic collects, how it is collected, what we use it for, who we share it with, how long we keep it, and how you can delete it or change your mind.
 
@@ -15,7 +15,7 @@ If you have any question about it, email **[xondesk@outlook.com](mailto:xondesk@
 ## 1. The short version
 
 - To turn a poster into a calendar event, we send the poster photo and the text read from it to Google's Gemini AI. We do not keep the photo. Google does not use it to train its models.
-- Events you **choose to share** become part of a public event collection. They are linked to a scrambled identifier, never to your name or email.
+- Events you **choose to share** become part of a public event collection. Other people see only a scrambled identifier, never your name or email. We can link a shared event to your account to review reports and act on content that breaks our Terms.
 - Your scan history stays on your device.
 - We show ads, but we ask our ad network for **non-personalized** ads only. We do not sell your personal information.
 - You can delete your account, and the data tied to it, from inside the app at any time.
@@ -25,7 +25,7 @@ If you have any question about it, email **[xondesk@outlook.com](mailto:xondesk@
 ### Account information
 To use Poster Magic you sign in with Apple, Google, or an email address and password. We receive your **email address** (or Apple's private relay address if you choose "Hide My Email") and an account ID from Google Firebase Authentication.
 
-We keep a profile for your account that holds your email address, account ID, the date you signed up, your scan allowance and how much of it you have used, your subscription status, bonus scans earned from rewarded ads, your app settings, when you accepted our Terms of Service, the people you have blocked, and any record of moderation action taken on your account.
+We keep a profile for your account that holds your email address, account ID, the date you signed up, your scan allowance and how much of it you have used, your subscription status, bonus scans earned from rewarded ads, your app settings, when you accepted our Terms of Service, the people you have blocked, the scrambled identifier attached to events you share, and any record of moderation action taken on your account.
 
 ### Poster photos and scanned text
 When you scan a poster, the app first reads its text **on your device** using Apple's built-in text recognition. It then sends the photo and that text to our server, which passes them to **Google's Gemini AI** to extract the event details (title, date, time, place and so on). The results are sent back to your device.
@@ -42,7 +42,7 @@ To prepare a shared event we also:
 - check the text against content rules using **OpenAI's moderation service**, and hold anything flagged for review; and
 - create a numeric "fingerprint" of the text with Gemini so we can recognise duplicate events.
 
-A shared event is linked to a one-way scrambled version of your account ID, so it cannot be traced back to your name or email by other users. Shared events may be shown to other people using Poster Magic.
+A shared event carries a scrambled version of your account ID, so other users can't trace it back to your name or email. We keep a link from that identifier to your account, so that when an event is reported or held for review we can see who shared it and, if it breaks our Terms, add a strike or stop the account from sharing. Shared events may be shown to other people using Poster Magic.
 
 ### Reports and blocks
 If you report an event, we record the event, your reason and your account ID so we can review it. If you block another person, we store that on your profile.
@@ -103,6 +103,7 @@ We may also disclose information if required by law, to protect the safety of ou
 - **Poster photos:** not stored by us. Google keeps Gemini requests for a limited period for abuse detection only.
 - **Shared events:** while they are part of the public collection, or until you delete your account (see below).
 - **Reports:** for as long as needed to review them and keep the service safe.
+- **Moderation records** (what we did about a reported or held event, and why): for as long as needed to keep the service safe. If you delete your account, they are kept without the link to you.
 - **Crash reports and usage statistics:** automatically deleted after the retention period set in Sentry and Google Analytics, at most 14 months.
 - **Purchase records:** for as long as the law requires for tax and accounting.
 
