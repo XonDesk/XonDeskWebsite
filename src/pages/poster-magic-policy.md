@@ -1,12 +1,12 @@
 ---
 layout: ../layouts/MarkdownLayout.astro
 title: Poster Magic Privacy Policy
-lastUpdated: October 2, 2026
+lastUpdated: November 7, 2026
 ---
 
 # Privacy Policy
 
-**Effective date:** November 6, 2026
+**Effective date:** November 7, 2026
 
 Sunbreak LLC ("we", "us", "our") makes the Poster Magic app for iPhone and iPad. This policy explains what information Poster Magic collects, how it is collected, what we use it for, who we share it with, how long we keep it, and how you can delete it or change your mind.
 
@@ -15,6 +15,7 @@ If you have any question about it, email **[xondesk@outlook.com](mailto:xondesk@
 ## 1. The short version
 
 - To turn a poster into a calendar event, we send the poster photo and the text read from it to Google's Gemini AI. We do not keep the photo. Google does not use it to train its models.
+- Before that, as soon as you open a poster in Preview, we send only the text read from it (not the photo) to check whether someone has already shared the same event.
 - Events you **choose to share** become part of a public event collection. Other people see only a scrambled identifier, never your name or email. We can link a shared event to your account to review reports and act on content that breaks our Terms.
 - Your scan history stays on your device.
 - We show ads, but we ask our ad network for **non-personalized** ads only. We do not sell your personal information.
@@ -28,7 +29,11 @@ To use Poster Magic you sign in with Apple, Google, or an email address and pass
 We keep a profile for your account that holds your email address, account ID, the date you signed up, your scan allowance and how much of it you have used, your subscription status, bonus scans earned from rewarded ads, your app settings, when you accepted our Terms of Service, the people you have blocked, the scrambled identifier attached to events you share, and any record of moderation action taken on your account.
 
 ### Poster photos and scanned text
-When you scan a poster, the app first reads its text **on your device** using Apple's built-in text recognition. It then sends the photo and that text to our server, which passes them to **Google's Gemini AI** to extract the event details (title, date, time, place and so on). The results are sent back to your device.
+When you scan a poster, the app first reads its text **on your device** using Apple's built-in text recognition.
+
+**Checking for an event that's already been shared.** As soon as you open the scanned poster in Preview, and before you tap Continue, the app sends the text it read (**not the photo**) to our server. Our server turns that text into a numeric "fingerprint" using Google's Gemini AI and compares it with events people have shared. This happens even if you then go back without continuing. If you were offline, the app keeps the scan on your device (see "Stored only on your device") and runs this check when you're back online, without you having to tap anything. If a shared event matches, we keep a short-lived record of your account ID and that event's ID for up to 7 days, so that if you choose to use the match we can count your scan once. When no event matches closely but some are similar, we may keep that text, the closest events' titles and how similar they were, together with the scrambled identifier described under "Events you choose to share", to improve how we recognise duplicates.
+
+**Reading the event details.** When you tap Continue, or open a waiting scan and continue, the app sends the photo and the text to our server, which passes them to **Google's Gemini AI** to extract the event details (title, date, time, place and so on). The results are sent back to your device.
 
 - We **do not store** your poster photos on our servers. They exist on our server only while the request is being processed.
 - We use Gemini under Google's paid service terms, under which Google **does not use** prompts, images or responses to improve its products. Google keeps them for a limited period solely to detect abuse of its service.
@@ -66,7 +71,7 @@ The app asks for access only when you use a feature that needs it, and you can c
 - **Location**, only if you use a feature that shows events near you. Your location is used to look up nearby events and is not stored on our servers.
 
 ### Stored only on your device
-Your scan history, saved poster images and calendar files stay on your device. We never receive them.
+Your scan history, saved poster images and calendar files stay on your device. We never receive them. Scans made while you were offline also wait on your device, with the text read from them, until you scan them or delete them.
 
 ## 3. How we use information
 
@@ -86,7 +91,7 @@ We share information only with the service providers that run parts of Poster Ma
 | Provider | What it does for us | Their privacy policy |
 | :--- | :--- | :--- |
 | Google Firebase | Sign-in, account database, server functions, usage statistics, app integrity checks | [policies.google.com/privacy](https://policies.google.com/privacy) |
-| Google Gemini API | Reading event details from poster photos | [Gemini API terms](https://ai.google.dev/gemini-api/terms) |
+| Google Gemini API | Reading event details from poster photos, and fingerprinting poster text to find already-shared events | [Gemini API terms](https://ai.google.dev/gemini-api/terms) |
 | Google Maps Platform | Turning event locations into map coordinates | [policies.google.com/privacy](https://policies.google.com/privacy) |
 | Google AdMob | Showing ads to free users | [policies.google.com/technologies/ads](https://policies.google.com/technologies/ads) |
 | Supabase | Hosting the public event collection and reports | [supabase.com/privacy](https://supabase.com/privacy) |
@@ -101,6 +106,8 @@ We may also disclose information if required by law, to protect the safety of ou
 
 - **Account and profile:** until you delete your account.
 - **Poster photos:** not stored by us. Google keeps Gemini requests for a limited period for abuse detection only.
+- **Match records** (your account ID and a matched shared event's ID): up to 7 days, and deleted with your account.
+- **Text from scans that nearly matched a shared event:** for as long as needed to improve duplicate matching.
 - **Shared events:** while they are part of the public collection, or until you delete your account (see below).
 - **Reports:** for as long as needed to review them and keep the service safe.
 - **Moderation records** (what we did about a reported or held event, and why): for as long as needed to keep the service safe. If you delete your account, they are kept without the link to you.
