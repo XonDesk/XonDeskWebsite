@@ -3,95 +3,159 @@
 <head>
 <meta charset="utf-8">
 <title>Engine Probe Receiver</title>
-<!-- Cast Application Framework (CAF) receiver SDK, loaded on-device from Google -->
+<!-- probe-v2 -->
 <script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
 </head>
 <body>
-<div id="log" style="font-family:monospace;color:#8f8;background:#111;padding:8px">engine-probe: starting…</div>
+<div id="log" style="font-family:monospace;color:#8f8;background:#111;padding:8px">engine-probe v2: starting…</div>
 <script>
-const NS = 'urn:x-cast:com.engineprobe';          // custom message namespace (must match sender)
+const NS = 'urn:x-cast:com.engineprobe';
 const logEl = document.getElementById('log');
 function log(s){ try{ logEl.textContent = String(s).slice(0,2000); }catch(e){} }
-
-// ---- benign fingerprint collection (no exploitation; feature-detection + env enumeration) ----
 function feat(fn){ try { return !!fn(); } catch(e){ return false; } }
 function val(fn){ try { const v = fn(); return (v===undefined?null:v); } catch(e){ return 'ERR:'+e.message; } }
 
-function webglRenderer(){
-  try{
-    const c = document.createElement('canvas');
-    const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
-    if(!gl) return {webgl:false};
-    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
-    return {
-      webgl:true,
-      vendor: gl.getParameter(gl.VENDOR),
-      renderer: gl.getParameter(gl.RENDERER),
-      unmasked_vendor: dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : null,
-      unmasked_renderer: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : null,
-      version: gl.getParameter(gl.VERSION),
-      glsl: gl.getParameter(gl.SHADING_LANGUAGE_VERSION),
-      max_texture: gl.getParameter(gl.MAX_TEXTURE_SIZE)
-    };
-  }catch(e){ return {webgl:'ERR:'+e.message}; }
+// ---- WASM / jitless probe (pivotal: jitless => no WebAssembly, no TurboFan surface) ----
+function wasmProbe(){
+  const out = { present: ('WebAssembly' in self) };
+  try {
+    const mod = new Uint8Array([0,97,115,109,1,0,0,0, 1,5,1,96,0,1,127, 3,2,1,0, 7,8,1,4,109,97,105,110,0,0, 10,6,1,4,0,65,42,11]);
+    const inst = new WebAssembly.Instance(new WebAssembly.Module(mod));
+    out.instantiate_ok = true;
+    out.call_result = inst.exports.main();   // expect 42 => JIT/WASM live => NOT jitless
+  } catch(e){ out.instantiate_ok = false; out.err = e.message; }
+  try {
+    const simd = new Uint8Array([0,97,115,109,1,0,0,0,1,5,1,96,0,1,123,3,2,1,0,10,10,1,8,0,65,0,253,15,253,98,11]);
+    out.simd = WebAssembly.validate(simd);   // true => Chrome >=91
+  } catch(e){ out.simd = 'ERR:'+e.message; }
+  out.shared_array_buffer = (typeof SharedArrayBuffer !== 'undefined');
+  out.cross_origin_isolated = val(()=>self.crossOriginIsolated);
+  return out;
 }
 
-function collect(){
-  const nav = navigator;
-  // Each feature maps to the Chrome version that first shipped it — brackets the engine from inside.
-  const featureMatrix = {
-    'Intl.Segmenter (C87)':        feat(()=>Intl.Segmenter),
-    'RegExp hasIndices /d (C90)':  feat(()=>new RegExp('a','d')),
-    'Array.at (C92)':              feat(()=>[].at),
-    'Object.hasOwn (C93)':         feat(()=>Object.hasOwn),
-    'Error.cause (C93)':           feat(()=>'cause' in new Error('x',{cause:1})),
-    'class static blocks (C94)':   feat(()=>{ eval('class X{ static{} }'); return true; }),
-    'Array.findLast (C97)':        feat(()=>[].findLast),
-    'structuredClone (C98)':       feat(()=>structuredClone),
-    'Array.group? (C117)':         feat(()=>[].group || Object.groupBy),
-    'Promise.withResolvers (C119)':feat(()=>Promise.withResolvers),
-    'Array.fromAsync (C121)':      feat(()=>Array.fromAsync),
-    'Set.intersection (C122)':     feat(()=>new Set().intersection),
+function codecProbe(){
+  const types = ['audio/mp4; codecs="mp4a.40.2"','audio/mpeg','audio/webm; codecs="opus"',
+    'audio/webm; codecs="vorbis"','audio/flac','audio/ogg; codecs="flac"','audio/wav; codecs="1"',
+    'audio/mp4; codecs="ac-3"','audio/mp4; codecs="ec-3"','audio/mp4; codecs="alac"','audio/aac'];
+  const mse = {}, el = {}; const a = document.createElement('audio');
+  for (const t of types){ mse[t] = val(()=> (self.MediaSource && MediaSource.isTypeSupported(t)) ); el[t] = val(()=> a.canPlayType(t)); }
+  return { mse_isTypeSupported: mse, audio_canPlayType: el };
+}
+
+function audioProbe(){
+  try {
+    const AC = self.AudioContext || self.webkitAudioContext; if(!AC) return {audiocontext:false};
+    const c = new AC();
+    const o = { sampleRate:c.sampleRate, baseLatency:c.baseLatency, outputLatency:c.outputLatency,
+      state:c.state, maxChannelCount: c.destination && c.destination.maxChannelCount };
+    try{ c.close(); }catch(e){}
+    return o;
+  } catch(e){ return {audiocontext:'ERR:'+e.message}; }
+}
+
+function apiInventory(){
+  const probes = {
+    WebGL2:()=>!!document.createElement('canvas').getContext('webgl2'),
+    OffscreenCanvas:()=>self.OffscreenCanvas, WebRTC:()=>self.RTCPeerConnection, WebSocket:()=>self.WebSocket,
+    Worker:()=>self.Worker, ServiceWorker:()=>navigator.serviceWorker, SharedWorker:()=>self.SharedWorker,
+    Bluetooth:()=>navigator.bluetooth, USB:()=>navigator.usb, Serial:()=>navigator.serial, HID:()=>navigator.hid,
+    Geolocation:()=>navigator.geolocation, Gamepad:()=>navigator.getGamepads, Notification:()=>self.Notification,
+    Permissions:()=>navigator.permissions, Payment:()=>self.PaymentRequest, WebXR:()=>navigator.xr,
+    SpeechSynthesis:()=>self.speechSynthesis, SpeechRecognition:()=>(self.SpeechRecognition||self.webkitSpeechRecognition),
+    MediaDevices:()=>navigator.mediaDevices, getUserMedia:()=>navigator.mediaDevices&&navigator.mediaDevices.getUserMedia,
+    Atomics:()=>self.Atomics, BigInt:()=>self.BigInt, WeakRef:()=>self.WeakRef, FinalizationRegistry:()=>self.FinalizationRegistry,
+    IntlSupportedValuesOf:()=>Intl.supportedValuesOf, cryptoSubtle:()=>self.crypto&&crypto.subtle,
+    IndexedDB:()=>self.indexedDB, Cache:()=>self.caches, WebAssembly:()=>self.WebAssembly
   };
+  const o = {}; for (const k in probes) o[k] = feat(probes[k]); return o;
+}
+
+function v8Tells(){
   return {
-    collected_at: new Date().toISOString(),
-    location: val(()=>location.href),
-    userAgent: val(()=>nav.userAgent),
-    appVersion: val(()=>nav.appVersion),
-    platform: val(()=>nav.platform),
-    language: val(()=>nav.language),
-    hardwareConcurrency: val(()=>nav.hardwareConcurrency),   // CPU core count (test: 4x A53?)
-    deviceMemory: val(()=>nav.deviceMemory),                 // RAM bucket hint
-    jsHeapSizeLimit: val(()=>performance.memory && performance.memory.jsHeapSizeLimit),
-    screen: val(()=>({w:screen.width,h:screen.height,dpr:devicePixelRatio,depth:screen.colorDepth})),
-    timezone: val(()=>Intl.DateTimeFormat().resolvedOptions().timeZone),
-    cast_sdk_version: val(()=>cast && cast.framework && cast.framework.VERSION),
-    webgl: webglRenderer(),                                   // GPU string -> SoC hint
-    featureMatrix: featureMatrix,
-    window_key_count: val(()=>Object.keys(window).length),
-    window_keys_sample: val(()=>Object.keys(window).slice(0,60)),
+    native_toString: val(()=>Array.prototype.push.toString()),
+    error_has_captureStackTrace: feat(()=>Error.captureStackTrace),
+    stack_sample: val(()=>{ const e=new Error('x'); return (e.stack||'').split('\n').slice(0,3).join(' | '); }),
+    perf_now_resolution: val(()=>{ let d=1e9; for(let i=0;i<50;i++){ const a=performance.now(),b=performance.now(); if(b>a)d=Math.min(d,b-a);} return d; }),
+    timeOrigin: val(()=>performance.timeOrigin),
+    intl: val(()=>Intl.DateTimeFormat().resolvedOptions())
   };
 }
 
-// ---- send the report back to the sender over the custom namespace ----
+async function drmProbe(){
+  const systems = ['com.widevine.alpha','com.microsoft.playready.recommendation','org.w3.clearkey'];
+  const out = {};
+  for (const ks of systems){
+    for (const robust of ['','HW_SECURE_ALL','SW_SECURE_DECODE','SW_SECURE_CRYPTO']){
+      const cfg = [{ initDataTypes:['cenc'], audioCapabilities:[{contentType:'audio/mp4; codecs="mp4a.40.2"', robustness:robust}] }];
+      try { const a = await navigator.requestMediaKeySystemAccess(ks, cfg);
+        out[ks+'|'+(robust||'(none)')] = true; } catch(e){ /* unsupported */ }
+    }
+  }
+  return Object.keys(out).length ? out : {supported:false};
+}
+
+async function storageProbe(){
+  try { if(navigator.storage && navigator.storage.estimate){ const e = await navigator.storage.estimate();
+    return { quota:e.quota, usage:e.usage, quota_MB: Math.round((e.quota||0)/1048576) }; } }
+  catch(e){ return {err:e.message}; }
+  return {estimate:false};
+}
+
+async function uaHintsProbe(){
+  try { const d = navigator.userAgentData; if(!d) return {present:false};
+    const hi = await d.getHighEntropyValues(['architecture','bitness','model','platform','platformVersion','uaFullVersion','fullVersionList']);
+    return { present:true, brands:d.brands, mobile:d.mobile, high:hi };
+  } catch(e){ return {err:e.message}; }
+}
+
+async function devicesProbe(){
+  try { if(!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return {enumerate:false};
+    const list = await navigator.mediaDevices.enumerateDevices();
+    return { count:list.length, kinds:list.map(d=>d.kind), labels:list.map(d=>d.label).filter(Boolean) };
+  } catch(e){ return {err:e.message}; }
+}
+
+async function collectAll(){
+  const nav = navigator;
+  const featureMatrix = {
+    'Intl.Segmenter (C87)':feat(()=>Intl.Segmenter),'RegExp /d (C90)':feat(()=>new RegExp('a','d')),
+    'Array.at (C92)':feat(()=>[].at),'Object.hasOwn (C93)':feat(()=>Object.hasOwn),
+    'Error.cause (C93)':feat(()=>'cause' in new Error('x',{cause:1})),'class static blocks (C94)':feat(()=>{eval('class X{static{}}');return true;}),
+    'Array.findLast (C97)':feat(()=>[].findLast),'structuredClone (C98)':feat(()=>structuredClone),
+    'Object.groupBy (C117)':feat(()=>Object.groupBy),'Promise.withResolvers (C119)':feat(()=>Promise.withResolvers),
+    'Array.fromAsync (C121)':feat(()=>Array.fromAsync),'Set.intersection (C122)':feat(()=>new Set().intersection),
+  };
+  const r = {
+    probe:'v2', collected_at:new Date().toISOString(), location:val(()=>location.href),
+    userAgent:val(()=>nav.userAgent), platform:val(()=>nav.platform),
+    hardwareConcurrency:val(()=>nav.hardwareConcurrency), deviceMemory:val(()=>nav.deviceMemory),
+    jsHeapSizeLimit:val(()=>performance.memory&&performance.memory.jsHeapSizeLimit),
+    totalJSHeap:val(()=>performance.memory&&performance.memory.totalJSHeapSize),
+    screen:val(()=>({w:screen.width,h:screen.height,dpr:devicePixelRatio})),
+    cast_sdk_version:val(()=>cast&&cast.framework&&cast.framework.VERSION),
+    connection:val(()=>{const c=nav.connection;return c?{type:c.type,effectiveType:c.effectiveType,downlink:c.downlink,rtt:c.rtt}:null;}),
+    featureMatrix, wasm:wasmProbe(), media:codecProbe(), audio:audioProbe(),
+    apis:apiInventory(), v8:v8Tells(), window_key_count:val(()=>Object.keys(window).length),
+  };
+  r.widevine = await drmProbe();
+  r.storage = await storageProbe();
+  r.uaHints = await uaHintsProbe();
+  r.devices = await devicesProbe();
+  return r;
+}
+
 const context = cast.framework.CastReceiverContext.getInstance();
 function report(senderId){
-  try{
-    const data = collect();
-    context.sendCustomMessage(NS, senderId, data);   // senderId undefined => broadcast
-    log('report sent @ '+data.collected_at+' UA='+data.userAgent);
-  }catch(e){ log('report error: '+e.message); }
+  collectAll().then(d=>{ context.sendCustomMessage(NS, senderId, d); log('v2 report sent @ '+d.collected_at); })
+              .catch(e=>{ context.sendCustomMessage(NS, senderId, {error:String(e&&e.message||e)}); log('err '+e.message); });
 }
-
 context.addCustomMessageListener(NS, (ev)=>{ report(ev.senderId); });
 context.addEventListener(cast.framework.system.EventType.READY, ()=>{ report(undefined); });
-
-// keep the app alive on a screenless/audio device (no media playing)
 const opts = new cast.framework.CastReceiverOptions();
 opts.disableIdleTimeout = true;
 opts.customNamespaces = { [NS]: cast.framework.system.MessageType.JSON };
 context.start(opts);
-log('engine-probe: started, waiting for READY…');
+log('engine-probe v2: started, waiting for READY…');
 </script>
 </body>
 </html>
