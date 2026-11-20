@@ -1,0 +1,97 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Engine Probe Receiver</title>
+<!-- Cast Application Framework (CAF) receiver SDK, loaded on-device from Google -->
+<script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
+</head>
+<body>
+<div id="log" style="font-family:monospace;color:#8f8;background:#111;padding:8px">engine-probe: starting…</div>
+<script>
+const NS = 'urn:x-cast:com.engineprobe';          // custom message namespace (must match sender)
+const logEl = document.getElementById('log');
+function log(s){ try{ logEl.textContent = String(s).slice(0,2000); }catch(e){} }
+
+// ---- benign fingerprint collection (no exploitation; feature-detection + env enumeration) ----
+function feat(fn){ try { return !!fn(); } catch(e){ return false; } }
+function val(fn){ try { const v = fn(); return (v===undefined?null:v); } catch(e){ return 'ERR:'+e.message; } }
+
+function webglRenderer(){
+  try{
+    const c = document.createElement('canvas');
+    const gl = c.getContext('webgl') || c.getContext('experimental-webgl');
+    if(!gl) return {webgl:false};
+    const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    return {
+      webgl:true,
+      vendor: gl.getParameter(gl.VENDOR),
+      renderer: gl.getParameter(gl.RENDERER),
+      unmasked_vendor: dbg ? gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) : null,
+      unmasked_renderer: dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : null,
+      version: gl.getParameter(gl.VERSION),
+      glsl: gl.getParameter(gl.SHADING_LANGUAGE_VERSION),
+      max_texture: gl.getParameter(gl.MAX_TEXTURE_SIZE)
+    };
+  }catch(e){ return {webgl:'ERR:'+e.message}; }
+}
+
+function collect(){
+  const nav = navigator;
+  // Each feature maps to the Chrome version that first shipped it — brackets the engine from inside.
+  const featureMatrix = {
+    'Intl.Segmenter (C87)':        feat(()=>Intl.Segmenter),
+    'RegExp hasIndices /d (C90)':  feat(()=>new RegExp('a','d')),
+    'Array.at (C92)':              feat(()=>[].at),
+    'Object.hasOwn (C93)':         feat(()=>Object.hasOwn),
+    'Error.cause (C93)':           feat(()=>'cause' in new Error('x',{cause:1})),
+    'class static blocks (C94)':   feat(()=>{ eval('class X{ static{} }'); return true; }),
+    'Array.findLast (C97)':        feat(()=>[].findLast),
+    'structuredClone (C98)':       feat(()=>structuredClone),
+    'Array.group? (C117)':         feat(()=>[].group || Object.groupBy),
+    'Promise.withResolvers (C119)':feat(()=>Promise.withResolvers),
+    'Array.fromAsync (C121)':      feat(()=>Array.fromAsync),
+    'Set.intersection (C122)':     feat(()=>new Set().intersection),
+  };
+  return {
+    collected_at: new Date().toISOString(),
+    location: val(()=>location.href),
+    userAgent: val(()=>nav.userAgent),
+    appVersion: val(()=>nav.appVersion),
+    platform: val(()=>nav.platform),
+    language: val(()=>nav.language),
+    hardwareConcurrency: val(()=>nav.hardwareConcurrency),   // CPU core count (test: 4x A53?)
+    deviceMemory: val(()=>nav.deviceMemory),                 // RAM bucket hint
+    jsHeapSizeLimit: val(()=>performance.memory && performance.memory.jsHeapSizeLimit),
+    screen: val(()=>({w:screen.width,h:screen.height,dpr:devicePixelRatio,depth:screen.colorDepth})),
+    timezone: val(()=>Intl.DateTimeFormat().resolvedOptions().timeZone),
+    cast_sdk_version: val(()=>cast && cast.framework && cast.framework.VERSION),
+    webgl: webglRenderer(),                                   // GPU string -> SoC hint
+    featureMatrix: featureMatrix,
+    window_key_count: val(()=>Object.keys(window).length),
+    window_keys_sample: val(()=>Object.keys(window).slice(0,60)),
+  };
+}
+
+// ---- send the report back to the sender over the custom namespace ----
+const context = cast.framework.CastReceiverContext.getInstance();
+function report(senderId){
+  try{
+    const data = collect();
+    context.sendCustomMessage(NS, senderId, data);   // senderId undefined => broadcast
+    log('report sent @ '+data.collected_at+' UA='+data.userAgent);
+  }catch(e){ log('report error: '+e.message); }
+}
+
+context.addCustomMessageListener(NS, (ev)=>{ report(ev.senderId); });
+context.addEventListener(cast.framework.system.EventType.READY, ()=>{ report(undefined); });
+
+// keep the app alive on a screenless/audio device (no media playing)
+const opts = new cast.framework.CastReceiverOptions();
+opts.disableIdleTimeout = true;
+opts.customNamespaces = { [NS]: cast.framework.system.MessageType.JSON };
+context.start(opts);
+log('engine-probe: started, waiting for READY…');
+</script>
+</body>
+</html>
